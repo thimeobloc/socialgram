@@ -1,5 +1,5 @@
 
-import Login from "../components/features/s2-Login";
+import Login from "./s2-Login";
 
 
 export default function loginPages() {
