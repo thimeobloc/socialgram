@@ -1,11 +1,17 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// generate a token for a user, no expiration
+// The server must refuse to start without a real secret. A hard-coded
+// fallback would let anyone forge a valid token.
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is missing from the environment");
+}
+
+// Tokens expire so a stolen token does not stay valid forever.
 export function generateToken(userId: string, role: string): string {
-  return jwt.sign({ userId, role }, JWT_SECRET);
+  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: "7d" });
 }
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
