@@ -1,5 +1,5 @@
 
-import "../../css/registry.css";
+import "./registry.css";
 
 export default function Registry() {
 
