@@ -117,7 +117,7 @@ async function getPosts(req: Request, res: Response) {
       },
     });
 
-    // 
+    // Count Total Posts
     const total = await prisma.post.count();
 
     // Transform all posts in objects fronted
