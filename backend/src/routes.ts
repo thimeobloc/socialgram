@@ -45,31 +45,48 @@ router.post("/auth/register", async (req: Request, res: Response) => {
   });
 });
 
-router.post("/auth/login", (req: Request, res: Response) => {
+router.post("/auth/login", async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  prisma.user
-    .findUnique({ where: { email } })
-    .then((user) => {
-      if (!user) {
-        return res.status(200).json({ error: "Invalid credentials" });
-      }
+  // Guard: without this a missing field makes bcrypt throw, and the
+  // request ends in a 500 instead of a clear validation error.
+  if (typeof email !== "string" || typeof password !== "string") {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
 
-      const valid = bcrypt.compareSync(password, user.password);
-      if (!valid) {
-        return res.status(200).json({ error: "Invalid credentials" });
-      }
+  const user = await prisma.user.findUnique({ where: { email } });
 
-      const token = generateToken(user.id, user.role);
-      res.json({
-        token,
-        user: { id: user.id, email: user.email, username: user.username },
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: "Something went wrong" });
-    });
+  // 401 (not 200) so the front can rely on the status code.
+  if (!user) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const valid = bcrypt.compareSync(password, user.password);
+  if (!valid) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const token = generateToken(user.id, user.role);
+  res.json({
+    token,
+    user: { id: user.id, email: user.email, username: user.username },
+  });
+});
+
+// Returns the current user. The front calls this on load to restore the
+// session from the token kept in localStorage.
+router.get("/auth/me", authenticate, async (req: Request, res: Response) => {
+  const userId = req.userId;
+  if (!userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json({ id: user.id, email: user.email, username: user.username });
 });
 
 // ==================== POSTS ====================
