@@ -1,5 +1,6 @@
 
-import "../../css/registry.css";
+import "./login.css";
+
 
 export default function Registry() {
 
