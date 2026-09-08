@@ -76,34 +76,72 @@ router.post("/auth/login", (req: Request, res: Response) => {
 
 // get the feed of all posts, most recent first
 async function getPosts(req: Request, res: Response) {
-  const posts = await prisma.post.findMany({
-    orderBy: { createdAt: "desc" },
-  });
 
-  const feed = [];
+  try{
+    // Parsing
+    const rawPage = Number(req.query.page)
+    const rawLimit = Number(req.query.limit)
+    
+    // Get page
+    let page = 1;
+      if (Number.isInteger(rawPage) && rawPage >= 1) {
+        page = rawPage;
+      }
 
-  for (const post of posts) {
-    // get the author from the database
-    const author = await prisma.user.findUnique({
-      where: { id: post.authorId },
+    // Get Limit
+    let limit = 20;
+      if (Number.isInteger(rawLimit) && rawLimit >= 1) {
+        limit = rawLimit;
+      }
+      if (limit > 50) {
+        limit = 50;
+      }
+
+    // Build Offset
+    const skip = (page - 1) * limit
+
+    const posts = await prisma.post.findMany({
+      orderBy: [
+        { createdAt: "desc" },
+        { id: "desc" }
+      ],
+      skip,
+      take: limit,
+      include: {
+        author: {
+          select: { id: true, username: true },
+        },
+        _count: {
+          select: {likes: true, comments: true },
+        },
+      },
     });
-    const likeCount = await prisma.like.count({ where: { postId: post.id } });
-    const commentCount = await prisma.comment.count({
-      where: { postId: post.id },
-    });
 
-    feed.push({
+    // 
+    const total = await prisma.post.count();
+
+    // Transform all posts in objects fronted
+    const items = posts.map((post) => ({
       id: post.id,
       content: post.content,
       imageUrl: post.imageUrl,
       created_at: post.createdAt,
-      author: author ? { id: author.id, username: author.username } : null,
-      likeCount,
-      commentCount,
-    });
-  }
+      author: post.author,
+      likeCount: post._count.likes,
+      commentCount: post._count.comments,
+    }));
 
-  res.json(feed);
+    res.json({
+      items,
+      page,
+      limit,
+      total,
+      hasMore: skip + items.length < total,
+    });
+  } catch (err){
+    console.error(err);
+    res.status(500).json({ error: "Impossible de charger le feed" })
+  }
 }
 
 async function handleCreatePost(req: Request, res: Response) {
