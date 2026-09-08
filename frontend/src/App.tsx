@@ -1,3 +1,7 @@
 export default function App() {
-  return <h1>frontend</h1>;
+  return (
+    <>
+    <h1>Frontend</h1>
+    </>
+  );
 }
