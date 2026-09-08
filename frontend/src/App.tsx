@@ -1,7 +1,13 @@
+import { Routes, Route } from "react-router-dom";
+import LoginPages from "./features/s2-login/loginPages";
+import RegistryPage from "./features/s1-registry/registryPage";
+
+
 export default function App() {
   return (
-    <>
-    <h1>Frontend</h1>
-    </>
+    <Routes>
+       <Route path="/login" element={<LoginPages />} />
+      <Route path="/register" element={<RegistryPage />} />
+    </Routes>
   );
 }
