@@ -1,11 +1,24 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// generate a token for a user, no expiration
+// The server must refuse to start without a real secret. A hard-coded
+// fallback would let anyone forge a valid token.
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is missing from the environment");
+}
+
+// A decoded token is external input: we check its shape before trusting it.
+const TokenPayloadSchema = z.object({
+  userId: z.string(),
+  role: z.string(),
+});
+
+// Tokens expire so a stolen token does not stay valid forever.
 export function generateToken(userId: string, role: string): string {
-  return jwt.sign({ userId, role }, JWT_SECRET);
+  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: "7d" });
 }
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
@@ -17,38 +30,31 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
   const token = header.split(" ")[1];
 
-    try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    if (typeof decoded === "string") {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    const userId = decoded.userId;
-    const userRole = decoded.role;
-
-    if (typeof userId !== "string" || typeof userRole !== "string") {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    req.userId = userId;
-    req.userRole = userRole;
-    next();
-  } catch (err) {
+  let decoded: unknown;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch {
     return res.status(401).json({ error: "Invalid token" });
   }
+
+  const payload = TokenPayloadSchema.safeParse(decoded);
+  if (!payload.success) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  req.userId = payload.data.userId;
+  req.userRole = payload.data.role;
+  next();
 }
 
-
-
-
+// Same checks as authenticate, but never blocks: an anonymous visitor
+// must still be able to read the feed.
 export function optionalAuthenticate(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   const header = req.headers.authorization;
-
   if (!header) {
     return next();
   }
@@ -58,20 +64,17 @@ export function optionalAuthenticate(
     return next();
   }
 
+  let decoded: unknown;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return next();
+  }
 
-    if (typeof decoded !== "string") {
-      const userId = decoded.userId;
-      const userRole = decoded.role;
-
-      if (typeof userId === "string" && typeof userRole === "string") {
-        req.userId = userId;
-        req.userRole = userRole;
-      }
-    }
-  } catch (err) {
-    // Token invalide : on continue en visiteur anonyme.
+  const payload = TokenPayloadSchema.safeParse(decoded);
+  if (payload.success) {
+    req.userId = payload.data.userId;
+    req.userRole = payload.data.role;
   }
 
   return next();

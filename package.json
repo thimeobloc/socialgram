@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "zod": "^4.5.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwind": "^4.0.0",
+    "tailwindcss": "^4.3.3"
+  }
+}

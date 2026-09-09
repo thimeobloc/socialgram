@@ -1,9 +1,11 @@
 import { Router, Request, Response } from "express";
-import {PrismaClient, Prisma} from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
+import { z } from "zod";
 import { authenticate, optionalAuthenticate, generateToken } from "./auth";
+
 const router = Router();
 const prisma = new PrismaClient();
 
@@ -19,16 +21,61 @@ const upload = multer({ storage });
 
 // ==================== AUTH ====================
 
+// The request body is external input (typed `any` by Express), so we
+// validate its shape before using it.
+const LoginBodySchema = z.object({
+  email: z.string(),
+  password: z.string(),
+});
+
 router.post("/auth/register", async (req: Request, res: Response) => {
+  //On récupere l'email l'username et le password envoyé par le front
   const { email, username, password } = req.body;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return res.status(200).json({ error: "Email already used" });
+  if (
+    typeof email !== "string" ||
+    typeof username !== "string" ||
+    typeof password !== "string"
+  ) {
+    return res.status(400).json({
+      error: "Invalid data",
+    });
   }
 
+  //On vérifie si l'email existe déja
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+
+  //On vérifie si l'email existe déja
+  const existingUsername = await prisma.user.findUnique({
+    where: { username },
+  });
+
+  if (
+    password.length < 8 ||
+    !/[A-Z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
+  ) {
+    return res.status(400).json({
+      error:
+        "Password must contain at least 8 characters, 1 uppercase letter, 1 number and 1 special character",
+    });
+  }
+
+  //On renvoie une erreur si elle existe
+  if (existingEmail) {
+    return res.status(409).json({ error: "Email already used" });
+  }
+
+  //On renvoie une erreur si elle existe
+  if (existingUsername) {
+    return res.status(409).json({ error: "Username already used" });
+  }
+
+  //On hashe le password
   const hashed = bcrypt.hashSync(password, 10);
 
+  //On crée le user avec une data
   const user = await prisma.user.create({
     data: {
       email,
@@ -37,16 +84,22 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     },
   });
 
+  //On génére le token
   const token = generateToken(user.id, user.role);
+  //On envoie en réponse le token et le user
+
   res.json({
+    success: true,
     token,
     user: { id: user.id, email: user.email, username: user.username },
   });
 });
 
 router.post("/auth/login", (req: Request, res: Response) => {
+  //On envoie l'email et le password du front
   const { email, password } = req.body;
 
+  //Vérification
   prisma.user
     .findUnique({ where: { email } })
     .then((user) => {
@@ -77,47 +130,81 @@ router.post("/auth/login", (req: Request, res: Response) => {
 async function getPosts(req: Request, res: Response) {
   const currentUserId = req.userId;
 
-  const posts = await prisma.post.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    // Parsing
+    const rawPage = Number(req.query.page);
+    const rawLimit = Number(req.query.limit);
 
-  const feed = [];
-
-  for (const post of posts) {
-    const author = await prisma.user.findUnique({
-      where: { id: post.authorId },
-    });
-    const likeCount = await prisma.like.count({ where: { postId: post.id } });
-    const commentCount = await prisma.comment.count({
-      where: { postId: post.id },
-    });
-
-    let likedByMe = false;
-    if (currentUserId) {
-      const myLike = await prisma.like.findFirst({
-        where: { postId: post.id, userId: currentUserId },
-      });
-      likedByMe = myLike !== null;
+    // Get page
+    let page = 1;
+    if (Number.isInteger(rawPage) && rawPage >= 1) {
+      page = rawPage;
     }
 
-    feed.push({
+    // Get Limit
+    let limit = 20;
+    if (Number.isInteger(rawLimit) && rawLimit >= 1) {
+      limit = rawLimit;
+    }
+    if (limit > 50) {
+      limit = 50;
+    }
+
+    // Build Offset
+    const skip = (page - 1) * limit;
+
+    const posts = await prisma.post.findMany({
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip,
+      take: limit,
+      include: {
+        author: {
+          select: { id: true, username: true },
+        },
+        _count: {
+          select: { likes: true, comments: true },
+        },
+        // Only the current user's like on each post, so we can tell the
+        // front whether to show a filled heart. An empty id matches no
+        // user, which keeps the query identical for anonymous visitors.
+        likes: {
+          where: { userId: currentUserId ?? "" },
+          select: { id: true },
+        },
+      },
+    });
+
+    // Count Total Posts
+    const total = await prisma.post.count();
+
+    // Transform all posts in objects fronted
+    const items = posts.map((post) => ({
       id: post.id,
       content: post.content,
       imageUrl: post.imageUrl,
       created_at: post.createdAt,
-      author: author ? { id: author.id, username: author.username } : null,
-      likeCount,
-      commentCount,
-      likedByMe,
-    });
-  }
+      author: post.author,
+      likeCount: post._count.likes,
+      commentCount: post._count.comments,
+      likedByMe: post.likes.length > 0,
+    }));
 
-  res.json(feed);
+    res.json({
+      items,
+      page,
+      limit,
+      total,
+      hasMore: skip + items.length < total,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Impossible de charger le feed" });
+  }
 }
 
 async function handleCreatePost(req: Request, res: Response) {
   const { content } = req.body;
-  const userId = (req as any).userId;
+  const userId = req.userId;
 
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -136,7 +223,7 @@ async function getPostById(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
   const currentUserId = req.userId;
 
-    const post = await prisma.post.findUnique({
+  const post = await prisma.post.findUnique({
     where: { id },
     include: {
       author: {
@@ -200,7 +287,7 @@ router.post(
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
     const { content } = req.body;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     const comment = await prisma.comment.create({
       data: {
@@ -212,7 +299,7 @@ router.post(
     });
 
     res.json(comment);
-  }
+  },
 );
 
 router.delete(
@@ -224,7 +311,7 @@ router.delete(
     await prisma.comment.delete({ where: { id } });
 
     res.json({ success: true });
-  }
+  },
 );
 
 // ==================== LIKES ====================
@@ -238,6 +325,7 @@ router.post(
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
+
     const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
@@ -259,9 +347,8 @@ router.post(
 
     const likeCount = await prisma.like.count({ where: { postId: id } });
     return res.json({ liked: true, likeCount });
-  }
+  },
 );
-
 
 router.delete(
   "/posts/:id/like",
@@ -277,7 +364,7 @@ router.delete(
 
     const likeCount = await prisma.like.count({ where: { postId: id } });
     return res.json({ liked: false, likeCount });
-  }
+  },
 );
 
 // ==================== USERS ====================
