@@ -29,15 +29,53 @@ const LoginBodySchema = z.object({
 });
 
 router.post("/auth/register", async (req: Request, res: Response) => {
+  //On récupere l'email l'username et le password envoyé par le front
   const { email, username, password } = req.body;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return res.status(200).json({ error: "Email already used" });
+  if (
+    typeof email !== "string" ||
+    typeof username !== "string" ||
+    typeof password !== "string"
+  ) {
+    return res.status(400).json({
+      error: "Invalid data",
+    });
   }
 
+  //On vérifie si l'email existe déja
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+
+  //On vérifie si l'email existe déja
+  const existingUsername = await prisma.user.findUnique({
+    where: { username },
+  });
+
+  if (
+    password.length < 8 ||
+    !/[A-Z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
+  ) {
+    return res.status(400).json({
+      error:
+        "Password must contain at least 8 characters, 1 uppercase letter, 1 number and 1 special character",
+    });
+  }
+
+  //On renvoie une erreur si elle existe
+  if (existingEmail) {
+    return res.status(409).json({ error: "Email already used" });
+  }
+
+  //On renvoie une erreur si elle existe
+  if (existingUsername) {
+    return res.status(409).json({ error: "Username already used" });
+  }
+
+  //On hashe le password
   const hashed = bcrypt.hashSync(password, 10);
 
+  //On crée le user avec une data
   const user = await prisma.user.create({
     data: {
       email,
@@ -46,54 +84,44 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     },
   });
 
+  //On génére le token
   const token = generateToken(user.id, user.role);
+  //On envoie en réponse le token et le user
+
   res.json({
+    success: true,
     token,
     user: { id: user.id, email: user.email, username: user.username },
   });
 });
 
-router.post("/auth/login", async (req: Request, res: Response) => {
-  // A missing field would otherwise make bcrypt throw and end in a 500.
-  const parsed = LoginBodySchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Email and password are required" });
-  }
-  const { email, password } = parsed.data;
+router.post("/auth/login", (req: Request, res: Response) => {
+  //On envoie l'email et le password du front
+  const { email, password } = req.body;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  //Vérification
+  prisma.user
+    .findUnique({ where: { email } })
+    .then((user) => {
+      if (!user) {
+        return res.status(200).json({ error: "Invalid credentials" });
+      }
 
-  // 401 (not 200) so the front can rely on the status code.
-  if (!user) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
+      const valid = bcrypt.compareSync(password, user.password);
+      if (!valid) {
+        return res.status(200).json({ error: "Invalid credentials" });
+      }
 
-  const valid = bcrypt.compareSync(password, user.password);
-  if (!valid) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-
-  const token = generateToken(user.id, user.role);
-  res.json({
-    token,
-    user: { id: user.id, email: user.email, username: user.username },
-  });
-});
-
-// Returns the current user. The front calls this on load to restore the
-// session from the token kept in localStorage.
-router.get("/auth/me", authenticate, async (req: Request, res: Response) => {
-  const userId = req.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
-
-  res.json({ id: user.id, email: user.email, username: user.username });
+      const token = generateToken(user.id, user.role);
+      res.json({
+        token,
+        user: { id: user.id, email: user.email, username: user.username },
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Something went wrong" });
+    });
 });
 
 // ==================== POSTS ====================
@@ -207,7 +235,7 @@ router.post(
     });
 
     res.json(comment);
-  }
+  },
 );
 
 router.delete(
@@ -219,7 +247,7 @@ router.delete(
     await prisma.comment.delete({ where: { id } });
 
     res.json({ success: true });
-  }
+  },
 );
 
 // ==================== LIKES ====================
@@ -239,7 +267,7 @@ router.post(
     });
 
     res.json(like);
-  }
+  },
 );
 
 router.delete(
@@ -259,7 +287,7 @@ router.delete(
 
     await prisma.like.delete({ where: { id: like.id } });
     res.json({ success: true });
-  }
+  },
 );
 
 // ==================== USERS ====================
