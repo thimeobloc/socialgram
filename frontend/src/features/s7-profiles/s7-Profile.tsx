@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { z } from "zod";
-
 import { useAuth } from "../../shared/auth/useAuth";
+import Delete from "../s8-deletion/postDeletion";
+
+//Post deletion confirmation
+export const [confirmPostDeletion, setConfirmationDeletion] = useState(false)
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -12,7 +15,11 @@ const PostsSchema = z.array(z.object({ id: z.string(), content: z.string() }));
 type ScreenState =
   | { status: "loading" }
   | { status: "error" }
-  | { status: "ready"; username: string; posts: { id: string; content: string }[] };
+  | {
+    status: "ready";
+    username: string;
+    posts: { id: string; content: string }[];
+  };
 
 export default function Profile() {
   const { id: routeId } = useParams<{ id: string }>();
@@ -62,7 +69,9 @@ export default function Profile() {
   }
 
   if (state.status === "error") {
-    return <p className="mt-20 text-center text-red-600">Profil introuvable.</p>;
+    return (
+      <p className="mt-20 text-center text-red-600">Profil introuvable.</p>
+    );
   }
 
   return (
@@ -79,6 +88,30 @@ export default function Profile() {
               className="whitespace-pre-line rounded-lg border border-gray-200 p-3 text-gray-700"
             >
               {post.content}
+
+              <button onClick={() => setConfirmationDeletion(true)}>Supprimer</button>
+
+              {confirmPostDeletion && (
+                <div>
+                  <p>Voulez-vous vraiment supprimer ce post ?</p>
+
+                  <button
+                    onClick={() => {
+                      setConfirmationDeletion(false);
+                      Delete(post.id);
+                    }}
+                  >
+                    Oui
+                  </button>
+
+                  <button
+                    onClick={() => setConfirmationDeletion(false)}
+                  >
+                    Non
+                  </button>
+                </div>
+              )}
+
             </li>
           ))
         )}
