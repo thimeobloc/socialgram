@@ -2,11 +2,30 @@ import { Link } from "react-router-dom";
 
 import { useFeed } from "./useFeed";
 import PostCard from "./PostCard";
+import { useAuth } from "../../shared/auth/useAuth";
+import { CreatePost } from "../s4-creatPost/createPost";
+import type { CreatedPost } from "../s4-creatPost/posts.types";
+import type { Post } from "./feed.schema";
 
 export default function Feed() {
-  const { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry } = useFeed();
+  const { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry, addPost } = useFeed();
+  const { token, user } = useAuth();
 
-  // --- 1. LOADING (uniquement au tout premier chargement) ---
+  function handlePostCreated(created: CreatedPost) {
+    if (!user) return; 
+    const newPost: Post = {
+      id: created.id,
+      content: created.content,
+      imageUrl: created.imageUrl,
+      created_at: created.createdAt,
+      author: { id: user.id, username: user.username },
+      likeCount: 0,
+      commentCount: 0,
+    };
+    addPost(newPost);
+  }
+
+  // --- 1. LOADING (only during the very first load) ---
   if (status === "loading") {
     return <p className="text-center text-gray-500 mt-20">Chargement du feed…</p>;
   }
@@ -28,8 +47,13 @@ export default function Feed() {
 
   // --- 3. EMPTY ---
   if (status === "empty") {
-    return <p className="text-center text-gray-500 mt-20">Aucun post pour le moment.</p>;
-  }
+  return (
+    <div className="max-w-xl mx-auto py-10 flex flex-col gap-4">
+      {token && <CreatePost token={token} onPostCreated={handlePostCreated} />}
+      <p className="text-center text-gray-500 mt-20">Aucun post pour le moment.</p>
+    </div>
+  );
+}
 
   // --- 4. SUCCESS ---
   return (
@@ -43,6 +67,9 @@ export default function Feed() {
           Profil
         </Link>
       </div>
+
+      {/* Displays the creation form only if the user is authenticated. */}
+      {token && <CreatePost token={token} onPostCreated={handlePostCreated} />}
 
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />

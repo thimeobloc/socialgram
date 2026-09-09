@@ -54,5 +54,10 @@ export function useFeed() {
       .finally(() => setIsLoadingMore(false));
   }, [page, hasMore, isLoadingMore]);
 
-  return { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry: loadFirstPage };
+  const addPost = useCallback((newPost: Post) => {
+  setPosts((prev) => [newPost, ...prev]);
+  setStatus("success");
+}, []);
+
+  return { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry: loadFirstPage, addPost };
 }
