@@ -1,18 +1,5 @@
 import { useState } from "react";
-import { z } from "zod";
-
-const registerResponseSchema = z.object({
-    success: z.boolean().optional(),
-    token: z.string().optional(),
-    user: z
-        .object({
-            id: z.string(),
-            email: z.string(),
-            username: z.string(),
-        })
-        .optional(),
-    error: z.string().optional(),
-});
+import { registerResponseSchema } from "./registry.schema"
 
 export default function Registry() {
     const [username, setUsername] = useState("");
@@ -249,7 +236,6 @@ export default function Registry() {
                     </p>
                 )}
 
-
                 {success && (
                     <p className="text-green-500"> Compte créé avec succès ! </p>
                 )}
@@ -278,8 +264,6 @@ export default function Registry() {
                 >
                     {loading ? "Inscription..." : "S'inscrire"}
                 </button>
-
-
 
                 <a href="/login" className="text-sm text-blue-600 text-center hover:underline mt-2"> Se connecter</a>
             </div>
