@@ -5,6 +5,7 @@ import ProtectedRoute from "./shared/auth/ProtectedRoute";
 import LoginPages from "./features/s2-login/loginPages";
 import RegistryPage from "./features/s1-registry/registryPage";
 import FeedPage from "./features/s3-feed/feedPage";
+import { PostDetail } from "./features/s5-commentary/postDetail";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/feed" element={<FeedPage />} />
+          <Route path="/posts/:id" element={<PostDetail />} />
         </Route>
       </Routes>
     </AuthProvider>
