@@ -11,7 +11,17 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({
+  post,
+  onToggleLike,
+  isPending,
+  canLike,
+}: {
+  post: Post;
+  onToggleLike: (postId: string) => void;
+  isPending: boolean;
+  canLike: boolean;
+}) {
   return (
     <article className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-3">
       <header className="flex items-center justify-between">
@@ -32,8 +42,18 @@ export default function PostCard({ post }: { post: Post }) {
         />
       )}
 
-      <footer className="text-sm text-gray-500 flex gap-4">
-        <span>❤️ {post.likeCount}</span>
+      <footer className="text-sm text-gray-500 flex gap-4 items-center">
+        <button
+          type="button"
+          onClick={() => onToggleLike(post.id)}
+          disabled={!canLike || isPending}
+          aria-pressed={post.likedByMe}
+          aria-label={post.likedByMe ? "Retirer mon like" : "Aimer ce post"}
+          className="flex items-center gap-1 transition-transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span>{post.likedByMe ? "❤️" : "🤍"}</span>
+          <span>{post.likeCount}</span>
+        </button>
         <span>💬 {post.commentCount}</span>
       </footer>
     </article>
