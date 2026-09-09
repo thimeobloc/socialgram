@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -8,6 +9,12 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is missing from the environment");
 }
+
+// A decoded token is external input: we check its shape before trusting it.
+const TokenPayloadSchema = z.object({
+  userId: z.string(),
+  role: z.string(),
+});
 
 // Tokens expire so a stolen token does not stay valid forever.
 export function generateToken(userId: string, role: string): string {
@@ -23,12 +30,19 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
   const token = header.split(" ")[1];
 
+  let decoded: unknown;
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    (req as any).userId = decoded.userId;
-    (req as any).userRole = decoded.role;
-    next();
-  } catch (err) {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch {
     return res.status(401).json({ error: "Invalid token" });
   }
+
+  const payload = TokenPayloadSchema.safeParse(decoded);
+  if (!payload.success) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  req.userId = payload.data.userId;
+  req.userRole = payload.data.role;
+  next();
 }
