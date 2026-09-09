@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
+import { z } from "zod";
 import { authenticate, generateToken } from "./auth";
 
 const router = Router();
@@ -19,6 +20,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ==================== AUTH ====================
+
+// The request body is external input (typed `any` by Express), so we
+// validate its shape before using it.
+const LoginBodySchema = z.object({
+  email: z.string(),
+  password: z.string(),
+});
 
 router.post("/auth/register", async (req: Request, res: Response) => {
   //On récupere l'email l'username et le password envoyé par le front
@@ -152,7 +160,7 @@ async function getPosts(req: Request, res: Response) {
 
 async function handleCreatePost(req: Request, res: Response) {
   const { content } = req.body;
-  const userId = (req as any).userId;
+  const userId = req.userId;
 
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -215,7 +223,7 @@ router.post(
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
     const { content } = req.body;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     const comment = await prisma.comment.create({
       data: {
@@ -249,7 +257,7 @@ router.post(
   authenticate,
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     const like = await prisma.like.create({
       data: {
@@ -267,7 +275,7 @@ router.delete(
   authenticate,
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     const like = await prisma.like.findFirst({
       where: { postId: id, userId },
