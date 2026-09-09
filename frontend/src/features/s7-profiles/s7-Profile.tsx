@@ -4,9 +4,6 @@ import { z } from "zod";
 import { useAuth } from "../../shared/auth/useAuth";
 import Delete from "../s8-deletion/postDeletion";
 
-//Post deletion confirmation
-export const [confirmPostDeletion, setConfirmationDeletion] = useState(false)
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 const UserSchema = z.object({ username: z.string() });
@@ -22,9 +19,16 @@ type ScreenState =
   };
 
 export default function Profile() {
+
+  //Post deletion confirmation
+  const [confirmPostDeletion, setConfirmationDeletion] = useState<string | null>(null);
+
+
+
   const { id: routeId } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const id = routeId ?? user?.id;
+
 
   const [state, setState] = useState<ScreenState>({ status: "loading" });
 
@@ -75,6 +79,7 @@ export default function Profile() {
   }
 
   return (
+
     <main className="mx-auto max-w-xl p-6">
       <h1 className="text-2xl font-bold text-gray-900">{state.username}</h1>
 
@@ -85,33 +90,67 @@ export default function Profile() {
           state.posts.map((post) => (
             <li
               key={post.id}
-              className="whitespace-pre-line rounded-lg border border-gray-200 p-3 text-gray-700"
+              className="relative rounded-xl border border-gray-200 bg-white p-4 pr-28 shadow-sm transition hover:shadow-md"
             >
-              {post.content}
+              <button
+                onClick={() => setConfirmationDeletion(post.id)}
+                className="absolute right-4 top-4 rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-600 active:scale-95"
+              >
+                Supprimer
+              </button>
 
-              <button onClick={() => setConfirmationDeletion(true)}>Supprimer</button>
+              <p className="whitespace-pre-line text-gray-700">
+                {post.content}
+              </p>
 
-              {confirmPostDeletion && (
-                <div>
-                  <p>Voulez-vous vraiment supprimer ce post ?</p>
+              {confirmPostDeletion === post.id && (
+                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                  <p className="mb-3 text-sm font-medium text-red-800">
+                    Voulez-vous vraiment supprimer ce post ?
+                  </p>
 
-                  <button
-                    onClick={() => {
-                      setConfirmationDeletion(false);
-                      Delete(post.id);
-                    }}
-                  >
-                    Oui
-                  </button>
+                  <div className="flex gap-2">
 
-                  <button
-                    onClick={() => setConfirmationDeletion(false)}
-                  >
-                    Non
-                  </button>
+                    <button
+                      onClick={async () => {
+
+                        if (!token) {
+                          return;
+                        }
+
+                        const success = await Delete(post.id, token);
+                        if (success) {
+                          setState((currentState) => {
+                            if (currentState.status !== "ready") {
+                              return currentState;
+                            }
+
+                            return {
+                              ...currentState,
+                              posts: currentState.posts.filter(
+                                (currentPost) => currentPost.id !== post.id
+                              ),
+                            };
+                          });
+
+                          setConfirmationDeletion(null);
+                        }
+                      }}
+                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 active:scale-95"
+                    >
+                      Oui, supprimer
+                    </button>
+
+                    <button
+                      onClick={() => setConfirmationDeletion(null)}
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 active:scale-95"
+                    >
+                      Annuler
+                    </button>
+
+                  </div>
                 </div>
               )}
-
             </li>
           ))
         )}

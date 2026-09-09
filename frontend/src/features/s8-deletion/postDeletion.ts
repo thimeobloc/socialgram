@@ -1,25 +1,31 @@
-import { setConfirmationDeletion } from "../s7-profiles/s7-Profile";
-
-export default async function Delete(postId: string) {
-  //Faire une confirmation de suppression
-
-  setConfirmationDeletion(true);
-
-  if (!postId) {
-    return;
+export default async function Delete(
+  postId: string,
+  token: string,
+): Promise<boolean> {
+  if (!postId || !token) {
+    return false;
   }
 
   try {
-    const response = await fetch("http://localhost:3000/posts/:{$postId}", {
-      method: "POST",
+    const response = await fetch(`http://localhost:3000/posts/${postId}`, {
+      method: "DELETE",
       headers: {
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        postId,
-      }),
     });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data: unknown = await response.json();
+
+    if (typeof data !== "object" || data === null || !("success" in data)) {
+      return false;
+    }
+
+    return data.success === true;
   } catch {
-  } finally {
+    return false;
   }
 }
