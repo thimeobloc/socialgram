@@ -3,8 +3,7 @@ import {PrismaClient, Prisma} from "@prisma/client";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
-import { authenticate, generateToken } from "./auth";
-
+import { authenticate, optionalAuthenticate, generateToken } from "./auth";
 const router = Router();
 const prisma = new PrismaClient();
 
@@ -76,6 +75,8 @@ router.post("/auth/login", (req: Request, res: Response) => {
 
 // get the feed of all posts, most recent first
 async function getPosts(req: Request, res: Response) {
+  const currentUserId = req.userId;
+
   const posts = await prisma.post.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -83,7 +84,6 @@ async function getPosts(req: Request, res: Response) {
   const feed = [];
 
   for (const post of posts) {
-    // get the author from the database
     const author = await prisma.user.findUnique({
       where: { id: post.authorId },
     });
@@ -91,6 +91,14 @@ async function getPosts(req: Request, res: Response) {
     const commentCount = await prisma.comment.count({
       where: { postId: post.id },
     });
+
+    let likedByMe = false;
+    if (currentUserId) {
+      const myLike = await prisma.like.findFirst({
+        where: { postId: post.id, userId: currentUserId },
+      });
+      likedByMe = myLike !== null;
+    }
 
     feed.push({
       id: post.id,
@@ -100,6 +108,7 @@ async function getPosts(req: Request, res: Response) {
       author: author ? { id: author.id, username: author.username } : null,
       likeCount,
       commentCount,
+      likedByMe,
     });
   }
 
@@ -125,21 +134,40 @@ async function handleCreatePost(req: Request, res: Response) {
 
 async function getPostById(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
+  const currentUserId = req.userId;
 
-  const post = await prisma.post.findUnique({
+    const post = await prisma.post.findUnique({
     where: { id },
     include: {
-      author: true,
+      author: {
+        select: { id: true, username: true },
+      },
       comments: {
-        include: { author: true },
+        include: {
+          author: {
+            select: { id: true, username: true },
+          },
+        },
         orderBy: { createdAt: "asc" },
       },
     },
   });
 
+  if (!post) {
+    return res.status(404).json({ error: "Post not found" });
+  }
+
   const likeCount = await prisma.like.count({ where: { postId: id } });
 
-  res.json({
+  let likedByMe = false;
+  if (currentUserId) {
+    const myLike = await prisma.like.findFirst({
+      where: { postId: id, userId: currentUserId },
+    });
+    likedByMe = myLike !== null;
+  }
+
+  return res.json({
     id: post.id,
     content: post.content,
     imageUrl: post.imageUrl,
@@ -147,6 +175,7 @@ async function getPostById(req: Request<{ id: string }>, res: Response) {
     author: post.author,
     comments: post.comments,
     likeCount,
+    likedByMe,
   });
 }
 
@@ -158,9 +187,9 @@ async function deletePost(req: Request<{ id: string }>, res: Response) {
   res.json({ success: true });
 }
 
-router.get("/posts", getPosts);
+router.get("/posts", optionalAuthenticate, getPosts);
 router.post("/posts", authenticate, upload.single("image"), handleCreatePost);
-router.get("/posts/:id", getPostById);
+router.get("/posts/:id", optionalAuthenticate, getPostById);
 router.delete("/posts/:id", authenticate, deletePost);
 
 // ==================== COMMENTS ====================

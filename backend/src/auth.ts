@@ -38,3 +38,41 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
+
+
+
+
+export function optionalAuthenticate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const header = req.headers.authorization;
+
+  if (!header) {
+    return next();
+  }
+
+  const token = header.split(" ")[1];
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    if (typeof decoded !== "string") {
+      const userId = decoded.userId;
+      const userRole = decoded.role;
+
+      if (typeof userId === "string" && typeof userRole === "string") {
+        req.userId = userId;
+        req.userRole = userRole;
+      }
+    }
+  } catch (err) {
+    // Token invalide : on continue en visiteur anonyme.
+  }
+
+  return next();
+}
