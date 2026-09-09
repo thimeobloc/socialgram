@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
+import { z } from "zod";
 import { authenticate, generateToken } from "./auth";
 
 const router = Router();
@@ -20,16 +21,61 @@ const upload = multer({ storage });
 
 // ==================== AUTH ====================
 
+// The request body is external input (typed `any` by Express), so we
+// validate its shape before using it.
+const LoginBodySchema = z.object({
+  email: z.string(),
+  password: z.string(),
+});
+
 router.post("/auth/register", async (req: Request, res: Response) => {
+  //On récupere l'email l'username et le password envoyé par le front
   const { email, username, password } = req.body;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return res.status(200).json({ error: "Email already used" });
+  if (
+    typeof email !== "string" ||
+    typeof username !== "string" ||
+    typeof password !== "string"
+  ) {
+    return res.status(400).json({
+      error: "Invalid data",
+    });
   }
 
+  //On vérifie si l'email existe déja
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+
+  //On vérifie si l'email existe déja
+  const existingUsername = await prisma.user.findUnique({
+    where: { username },
+  });
+
+  if (
+    password.length < 8 ||
+    !/[A-Z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
+  ) {
+    return res.status(400).json({
+      error:
+        "Password must contain at least 8 characters, 1 uppercase letter, 1 number and 1 special character",
+    });
+  }
+
+  //On renvoie une erreur si elle existe
+  if (existingEmail) {
+    return res.status(409).json({ error: "Email already used" });
+  }
+
+  //On renvoie une erreur si elle existe
+  if (existingUsername) {
+    return res.status(409).json({ error: "Username already used" });
+  }
+
+  //On hashe le password
   const hashed = bcrypt.hashSync(password, 10);
 
+  //On crée le user avec une data
   const user = await prisma.user.create({
     data: {
       email,
@@ -38,16 +84,22 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     },
   });
 
+  //On génére le token
   const token = generateToken(user.id, user.role);
+  //On envoie en réponse le token et le user
+
   res.json({
+    success: true,
     token,
     user: { id: user.id, email: user.email, username: user.username },
   });
 });
 
 router.post("/auth/login", (req: Request, res: Response) => {
+  //On envoie l'email et le password du front
   const { email, password } = req.body;
 
+  //Vérification
   prisma.user
     .findUnique({ where: { email } })
     .then((user) => {
@@ -146,7 +198,7 @@ async function getPosts(req: Request, res: Response) {
 
 async function handleCreatePost(req: Request, res: Response) {
   const { content } = req.body;
-  const userId = (req as any).userId;
+  const userId = req.userId;
 
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -209,7 +261,7 @@ router.post(
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
     const { content } = req.body;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     const comment = await prisma.comment.create({
       data: {
@@ -221,7 +273,7 @@ router.post(
     });
 
     res.json(comment);
-  }
+  },
 );
 
 router.delete(
@@ -233,7 +285,7 @@ router.delete(
     await prisma.comment.delete({ where: { id } });
 
     res.json({ success: true });
-  }
+  },
 );
 
 // ==================== LIKES ====================
@@ -243,7 +295,7 @@ router.post(
   authenticate,
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     const like = await prisma.like.create({
       data: {
@@ -253,7 +305,7 @@ router.post(
     });
 
     res.json(like);
-  }
+  },
 );
 
 router.delete(
@@ -261,7 +313,7 @@ router.delete(
   authenticate,
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     const like = await prisma.like.findFirst({
       where: { postId: id, userId },
@@ -273,7 +325,7 @@ router.delete(
 
     await prisma.like.delete({ where: { id: like.id } });
     res.json({ success: true });
-  }
+  },
 );
 
 // ==================== USERS ====================
