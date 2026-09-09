@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { useFeed } from "./useFeed";
 import PostCard from "./PostCard";
 
@@ -32,7 +34,15 @@ export default function Feed() {
   // --- 4. SUCCESS ---
   return (
     <div className="max-w-xl mx-auto py-10 flex flex-col gap-4">
-      <h1 className="text-2xl font-bold text-gray-800">Feed</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">Feed</h1>
+        <Link
+          to="/profile"
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+        >
+          Profil
+        </Link>
+      </div>
 
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
