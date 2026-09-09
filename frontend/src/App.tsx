@@ -4,7 +4,7 @@ import { AuthProvider } from "./shared/auth/AuthContext";
 import ProtectedRoute from "./shared/auth/ProtectedRoute";
 import LoginPages from "./features/s2-login/loginPages";
 import RegistryPage from "./features/s1-registry/registryPage";
-import FeedPage from "./features/feed/FeedPage";
+import FeedPage from "./features/s3-feed/feedPage";
 
 export default function App() {
   return (
