@@ -17,10 +17,22 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
   const token = header.split(" ")[1];
 
-  try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    (req as any).userId = decoded.userId;
-    (req as any).userRole = decoded.role;
+    try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    if (typeof decoded === "string") {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const userId = decoded.userId;
+    const userRole = decoded.role;
+
+    if (typeof userId !== "string" || typeof userRole !== "string") {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    req.userId = userId;
+    req.userRole = userRole;
     next();
   } catch (err) {
     return res.status(401).json({ error: "Invalid token" });

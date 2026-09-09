@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import {PrismaClient, Prisma} from "@prisma/client";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
@@ -205,36 +205,49 @@ router.post(
   authenticate,
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
-    const userId = (req as any).userId;
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const post = await prisma.post.findUnique({ where: { id } });
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
 
-    const like = await prisma.like.create({
-      data: {
-        postId: id,
-        userId,
-      },
-    });
+    try {
+      await prisma.like.create({ data: { postId: id, userId } });
+    } catch (error) {
+      const isDuplicate =
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002";
 
-    res.json(like);
+      if (!isDuplicate) {
+        console.error(error);
+        return res.status(500).json({ error: "Could not like this post" });
+      }
+      // Doublon : le like existe déjà, c'est le résultat voulu. On continue.
+    }
+
+    const likeCount = await prisma.like.count({ where: { postId: id } });
+    return res.json({ liked: true, likeCount });
   }
 );
+
 
 router.delete(
   "/posts/:id/like",
   authenticate,
   async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params;
-    const userId = (req as any).userId;
-
-    const like = await prisma.like.findFirst({
-      where: { postId: id, userId },
-    });
-
-    if (!like) {
-      return res.status(200).json({ error: "Like not found" });
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    await prisma.like.delete({ where: { id: like.id } });
-    res.json({ success: true });
+    await prisma.like.deleteMany({ where: { postId: id, userId } });
+
+    const likeCount = await prisma.like.count({ where: { postId: id } });
+    return res.json({ liked: false, likeCount });
   }
 );
 
