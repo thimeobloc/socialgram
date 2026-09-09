@@ -8,4 +8,4 @@ export const CreatePostResponseSchema  = z.object({
   createdAt: z.string(),
 });
 
-export type Post = z.infer<typeof CreatePostResponseSchema>;
+export type CreatedPost = z.infer<typeof CreatePostResponseSchema>;

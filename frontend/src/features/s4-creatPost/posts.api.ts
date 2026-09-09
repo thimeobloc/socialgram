@@ -1,11 +1,11 @@
-import { CreatePostResponseSchema, Post } from "./posts.types";
+import { CreatePostResponseSchema, type CreatedPost } from "./posts.types";
 
 type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };
   
 
-async function dataPost(content: string, img: File | null, token: string): Promise<ApiResult<Post>> {
+async function dataPost(content: string, img: File | null, token: string): Promise<ApiResult<CreatedPost>> {
     const API_URL = import.meta.env.VITE_API_URL;
     const formData = new FormData();
 

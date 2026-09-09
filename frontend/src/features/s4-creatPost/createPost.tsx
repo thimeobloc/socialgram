@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { dataPost } from "./posts.api";
-import type { Post } from "./posts.types";
+import type { CreatedPost } from "./posts.types";
 
 const max_length = 500;       
 const max_size = 5 * 1024 * 1024; 
@@ -8,7 +8,7 @@ const alloweds_types = ["image/jpeg", "image/png", "image/webp"];
 
 type CreatePostProps = {
   token: string;
-  onPostCreated: (post: Post) => void; // The parent reacts; we are not dealing with that here.
+  onPostCreated: (post: CreatedPost) => void; // The parent reacts; we are not dealing with that here.
 };
 
 function CreatePost({ token, onPostCreated }: CreatePostProps) {
