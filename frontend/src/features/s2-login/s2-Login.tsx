@@ -4,45 +4,36 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../shared/auth/useAuth";
 import { CredentialsSchema } from "./auth.schema";
 
-// The four screen states of this form:
-// - "idle"    : nothing has happened yet
-// - "loading" : request in flight, the button is disabled
-// - "error"   : validation or the API failed, we show `message`
-// There is no "success" state to render: on success we leave this page
-// (redirect to /feed), so the form is unmounted.
-type FormState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "error"; message: string };
-
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [state, setState] = useState<FormState>({ status: "idle" });
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    // Validate what the user typed before touching the network.
+    // Check the fields before calling the API.
     const parsed = CredentialsSchema.safeParse({ email, password });
     if (!parsed.success) {
-      setState({ status: "error", message: parsed.error.issues[0].message });
+      setErrorMessage(parsed.error.issues[0].message);
       return;
     }
 
-    setState({ status: "loading" });
+    setErrorMessage("");
+    setLoading(true);
     const result = await login(parsed.data.email, parsed.data.password);
+    setLoading(false);
+
     if (result.ok) {
       navigate("/feed", { replace: true });
       return;
     }
-    setState({ status: "error", message: result.error });
+    setErrorMessage(result.error);
   }
-
-  const isLoading = state.status === "loading";
 
   return (
     <div className="mx-auto mt-16 flex max-w-sm flex-col items-center px-4">
@@ -79,18 +70,18 @@ export default function Login() {
           />
         </label>
 
-        {state.status === "error" && (
+        {errorMessage !== "" && (
           <p role="alert" className="text-sm text-red-600">
-            {state.message}
+            {errorMessage}
           </p>
         )}
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={loading}
           className="mt-2 w-full rounded-full bg-brand py-2.5 font-semibold text-white transition-colors hover:bg-brand-dark disabled:opacity-50"
         >
-          {isLoading ? "Connexion…" : "Se connecter"}
+          {loading ? "Connexion…" : "Se connecter"}
         </button>
 
         <Link

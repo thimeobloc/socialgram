@@ -2,8 +2,7 @@ import { LoginResponseSchema, type AuthUser } from "./auth.schema";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// The caller must check `ok` before reading `token`/`user`. This makes it
-// impossible to forget the error case (TypeScript won't let you).
+// The caller must check `ok` before reading `token` / `user`.
 export type LoginResult =
   | { ok: true; token: string; user: AuthUser }
   | { ok: false; error: string };
@@ -19,7 +18,7 @@ export async function login(
       body: JSON.stringify({ email, password }),
     });
 
-    // 401 here means "wrong email/password", not "session expired".
+    // 401 here means "wrong email or password".
     if (response.status === 401) {
       return { ok: false, error: "Email ou mot de passe incorrect" };
     }
@@ -27,7 +26,7 @@ export async function login(
       return { ok: false, error: "Le serveur a renvoyé une erreur" };
     }
 
-    // The response is `unknown` until Zod has checked its shape.
+    // We only trust the body once Zod has checked its shape.
     const data: unknown = await response.json();
     const parsed = LoginResponseSchema.safeParse(data);
     if (!parsed.success) {
@@ -35,12 +34,7 @@ export async function login(
     }
 
     return { ok: true, token: parsed.data.token, user: parsed.data.user };
-  } catch (error: unknown) {
-    return { ok: false, error: toErrorMessage(error) };
+  } catch {
+    return { ok: false, error: "Impossible de contacter le serveur" };
   }
-}
-
-export function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return "Erreur inconnue";
 }
