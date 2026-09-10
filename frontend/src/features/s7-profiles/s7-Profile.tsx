@@ -22,8 +22,7 @@ export default function Profile() {
 
   //Post deletion confirmation
   const [confirmPostDeletion, setConfirmationDeletion] = useState<string | null>(null);
-
-
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { id: routeId } = useParams<{ id: string }>();
   const { user, token } = useAuth();
@@ -118,23 +117,28 @@ export default function Profile() {
                           return;
                         }
 
-                        const success = await Delete(post.id, token);
-                        if (success) {
-                          setState((currentState) => {
-                            if (currentState.status !== "ready") {
-                              return currentState;
-                            }
+                        const result = await Delete(post.id, token);
 
-                            return {
-                              ...currentState,
-                              posts: currentState.posts.filter(
-                                (currentPost) => currentPost.id !== post.id
-                              ),
-                            };
-                          });
-
-                          setConfirmationDeletion(null);
+                        if (!result.success) {
+                          setDeleteError(result.error);
+                          return;
                         }
+
+                        setState((currentState) => {
+                          if (currentState.status !== "ready") {
+                            return currentState;
+                          }
+
+                          return {
+                            ...currentState,
+                            posts: currentState.posts.filter(
+                              (currentPost) => currentPost.id !== post.id
+                            ),
+
+                          };
+                        });
+
+                        setConfirmationDeletion(null);
                       }}
                       className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 active:scale-95"
                     >
@@ -147,6 +151,12 @@ export default function Profile() {
                     >
                       Annuler
                     </button>
+
+                    {deleteError && (
+                      <p className="mb-3 text-sm font-medium text-red-700">
+                        {deleteError}
+                      </p>
+                    )}
 
                   </div>
                 </div>

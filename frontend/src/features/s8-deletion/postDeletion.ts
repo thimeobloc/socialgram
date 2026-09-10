@@ -1,9 +1,24 @@
+import { z } from "zod";
+import { DeleteResponseSchema } from "./postDeletion.schema";
+
+type DeleteResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
 export default async function Delete(
   postId: string,
   token: string,
-): Promise<boolean> {
+): Promise<DeleteResult> {
   if (!postId || !token) {
-    return false;
+    return {
+      success: false,
+      error: "Impossible de supprimer le post.",
+    };
   }
 
   try {
@@ -14,18 +29,42 @@ export default async function Delete(
       },
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      return false;
+      if (
+        data !== null &&
+        typeof data === "object" &&
+        "error" in data &&
+        typeof data.error === "string"
+      ) {
+        return {
+          success: false,
+          error: data.error,
+        };
+      }
+
+      return {
+        success: false,
+        error: "Une erreur est survenue lors de la suppression.",
+      };
     }
 
-    const data: unknown = await response.json();
+    const parsed = DeleteResponseSchema.safeParse(data);
 
-    if (typeof data !== "object" || data === null || !("success" in data)) {
-      return false;
+    if (!parsed.success || !parsed.data.success) {
+      return {
+        success: false,
+        error: "Réponse invalide du serveur.",
+      };
     }
-
-    return data.success === true;
+    return {
+      success: true,
+    };
   } catch {
-    return false;
+    return {
+      success: false,
+      error: "Impossible de contacter le serveur.",
+    };
   }
 }

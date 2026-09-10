@@ -29,7 +29,7 @@ const LoginBodySchema = z.object({
 });
 
 router.post("/auth/register", async (req: Request, res: Response) => {
-  //On récupere l'email l'username et le password envoyé par le front
+  //fetch email and name from front
   const { email, username, password } = req.body;
 
   if (
@@ -42,10 +42,8 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     });
   }
 
-  //On vérifie si l'email existe déja
   const existingEmail = await prisma.user.findUnique({ where: { email } });
 
-  //On vérifie si l'email existe déja
   const existingUsername = await prisma.user.findUnique({
     where: { username },
   });
@@ -62,20 +60,17 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     });
   }
 
-  //On renvoie une erreur si elle existe
+  //send error if email already existing
   if (existingEmail) {
     return res.status(409).json({ error: "Email already used" });
   }
 
-  //On renvoie une erreur si elle existe
+  //send error if email already existing
   if (existingUsername) {
     return res.status(409).json({ error: "Username already used" });
   }
-
-  //On hashe le password
   const hashed = bcrypt.hashSync(password, 10);
 
-  //On crée le user avec une data
   const user = await prisma.user.create({
     data: {
       email,
@@ -84,9 +79,7 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     },
   });
 
-  //On génére le token
   const token = generateToken(user.id, user.role);
-  //On envoie en réponse le token et le user
 
   res.json({
     success: true,
@@ -96,10 +89,8 @@ router.post("/auth/register", async (req: Request, res: Response) => {
 });
 
 router.post("/auth/login", (req: Request, res: Response) => {
-  //On envoie l'email et le password du front
   const { email, password } = req.body;
 
-  //Vérification
   prisma.user
     .findUnique({ where: { email } })
     .then((user) => {
