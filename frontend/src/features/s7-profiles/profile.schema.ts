@@ -12,5 +12,10 @@ export const profilePostSchema = z.object({
 
 export const profilePostsSchema = z.array(profilePostSchema);
 
+export const updatedProfileSchema = z.object({
+  username: z.string(),
+  email: z.string(),
+});
+
 export type ProfileUser = z.infer<typeof profileUserSchema>;
 export type ProfilePost = z.infer<typeof profilePostSchema>;

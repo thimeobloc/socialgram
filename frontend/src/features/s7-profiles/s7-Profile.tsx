@@ -1,14 +1,19 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { useAuth } from "../../shared/auth/useAuth";
+import EditProfileModal from "./EditProfileModal";
 import { useProfile } from "./useProfile";
 
 export default function Profile() {
   const { id: routeId } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const profileId = routeId ?? user?.id;
-  const { screen } = useProfile(profileId);
+  const isOwner = routeId === undefined || routeId === user?.id;
+
+  const { screen, showUsername } = useProfile(profileId);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   if (screen.status === "loading") {
     return <p className="mt-20 text-center text-gray-500">Chargement…</p>;
@@ -18,12 +23,24 @@ export default function Profile() {
     return <p className="mt-20 text-center text-red-600">{screen.message}</p>;
   }
 
+  const canEdit = isOwner && token !== null && profileId !== undefined;
+
   return (
     <main className="mx-auto max-w-xl p-6">
       <header className="flex items-center justify-between border-b border-gray-200 pb-4">
         <h1 className="text-2xl font-bold text-gray-900">
           {screen.user.username}
         </h1>
+
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setIsEditOpen(true)}
+            className="rounded-md border border-gray-300 px-4 py-1.5 text-sm font-medium hover:bg-gray-50"
+          >
+            Modifier le profil
+          </button>
+        )}
       </header>
 
       {screen.status === "empty" ? (
@@ -40,6 +57,21 @@ export default function Profile() {
           ))}
         </ul>
       )}
+
+      {isEditOpen &&
+        isOwner &&
+        user !== null &&
+        token !== null &&
+        profileId !== undefined && (
+          <EditProfileModal
+            userId={profileId}
+            token={token}
+            currentUsername={screen.user.username}
+            currentEmail={user.email}
+            onClose={() => setIsEditOpen(false)}
+            onSaved={showUsername}
+          />
+        )}
     </main>
   );
 }

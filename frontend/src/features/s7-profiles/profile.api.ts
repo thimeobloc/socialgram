@@ -1,6 +1,7 @@
 import {
   profilePostsSchema,
   profileUserSchema,
+  updatedProfileSchema,
   type ProfilePost,
   type ProfileUser,
 } from "./profile.schema";
@@ -34,6 +35,50 @@ export async function fetchProfile(userId: string): Promise<ProfileResult> {
     }
 
     return { status: "ok", user: user.data, posts: posts.data };
+  } catch {
+    return { status: "error" };
+  }
+}
+
+export type UpdateResult =
+  | { status: "ok"; username: string; email: string }
+  | { status: "taken" }
+  | { status: "error" };
+
+export async function updateProfile(
+  userId: string,
+  token: string,
+  username: string,
+  email: string,
+): Promise<UpdateResult> {
+  try {
+    const response = await fetch(`${API_URL}/users/${userId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ username, email }),
+    });
+
+    if (response.status === 409) {
+      return { status: "taken" };
+    }
+    if (!response.ok) {
+      return { status: "error" };
+    }
+
+    const raw: unknown = await response.json();
+    const parsed = updatedProfileSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { status: "error" };
+    }
+
+    return {
+      status: "ok",
+      username: parsed.data.username,
+      email: parsed.data.email,
+    };
   } catch {
     return { status: "error" };
   }

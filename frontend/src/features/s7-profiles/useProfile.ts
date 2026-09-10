@@ -48,5 +48,14 @@ export function useProfile(userId: string | undefined) {
     };
   }, [userId]);
 
-  return { screen };
+  function showUsername(username: string) {
+    setScreen((current) => {
+      if (current.status === "empty" || current.status === "success") {
+        return { ...current, user: { ...current.user, username } };
+      }
+      return current;
+    });
+  }
+
+  return { screen, showUsername };
 }
