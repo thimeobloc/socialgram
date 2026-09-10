@@ -5,10 +5,11 @@ import { postComment } from "./postComment.api";
 import type { Comment } from "./postDetail.schema";
 import { useAuth } from "../../shared/auth/useAuth";
 import { API_URL } from "../s3-feed/config";
+import { CommentItem } from "./CommentItem";
 
 export function PostDetail() {
   const { id } = useParams<{ id: string }>();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const state = usePostDetail(id ?? "", token);
 
@@ -16,6 +17,7 @@ export function PostDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [localComments, setLocalComments] = useState<Comment[]>([]);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   // Navigating between posts keeps this component mounted, so the per-post
   // local state must be cleared when the id changes.
@@ -23,6 +25,7 @@ export function PostDetail() {
     setContent("");
     setSubmitError(null);
     setLocalComments([]);
+    setDeletedIds(new Set());
   }, [id]);
 
   // Sends a new comment to the API
@@ -79,7 +82,9 @@ export function PostDetail() {
 
     case "success": {
       const post = state.data;
-      const allComments = [...post.comments, ...localComments];
+      const allComments = [...post.comments, ...localComments].filter(
+        (c) => !deletedIds.has(c.id),
+      );
 
       return (
         <article className="max-w-xl mx-auto mt-6 bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4">
@@ -111,15 +116,18 @@ export function PostDetail() {
 
             <ul className="flex flex-col gap-2">
               {allComments.length === 0 ? (
-                <li className="text-sm text-gray-500">Aucun commentaire pour l'instant.</li>
+                <li className="text-gray-500 text-sm">Aucun commentaire pour l'instant.</li>
               ) : (
                 allComments.map((c) => (
-                  <li
+                  <CommentItem
                     key={c.id}
-                    className="bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-700"
-                  >
-                    <strong className="text-gray-800">{c.author.username}</strong> : {c.content}
-                  </li>
+                    comment={c}
+                    canDelete={user?.id === c.author.id}
+                    token={token}
+                    onDeleted={(deletedId) =>
+                      setDeletedIds((prev) => new Set(prev).add(deletedId))
+                    }
+                  />
                 ))
               )}
             </ul>
