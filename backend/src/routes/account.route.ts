@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authenticate, generateToken } from "../auth";
-import { prisma, router } from "./config";
+import { prisma, router } from "./config.route";
 
 // ==================== AUTH ====================
 

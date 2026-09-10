@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { authenticate } from "../auth";
-import { prisma, router } from "./config";
+import { prisma, router } from "./config.route";
 
 const MAX_POST_LENGTH = 500;
 

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { authenticate } from "../auth";
-import { prisma, router } from "./config";
+import { prisma, router } from "./config.route";
 
 // ==================== LIKES ====================
 

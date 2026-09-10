@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { authenticate } from "../auth";
-import { prisma, router } from "./config";
+import { prisma, router } from "./config.route";
 
 // ==================== USERS ====================
 
