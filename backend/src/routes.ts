@@ -29,7 +29,7 @@ const LoginBodySchema = z.object({
 });
 
 router.post("/auth/register", async (req: Request, res: Response) => {
-  //On récupere l'email l'username et le password envoyé par le front
+  //fetch email and name from front
   const { email, username, password } = req.body;
 
   if (
@@ -42,10 +42,8 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     });
   }
 
-  //On vérifie si l'email existe déja
   const existingEmail = await prisma.user.findUnique({ where: { email } });
 
-  //On vérifie si l'email existe déja
   const existingUsername = await prisma.user.findUnique({
     where: { username },
   });
@@ -62,20 +60,17 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     });
   }
 
-  //On renvoie une erreur si elle existe
+  //send error if email already existing
   if (existingEmail) {
     return res.status(409).json({ error: "Email already used" });
   }
 
-  //On renvoie une erreur si elle existe
+  //send error if email already existing
   if (existingUsername) {
     return res.status(409).json({ error: "Username already used" });
   }
-
-  //On hashe le password
   const hashed = bcrypt.hashSync(password, 10);
 
-  //On crée le user avec une data
   const user = await prisma.user.create({
     data: {
       email,
@@ -84,9 +79,7 @@ router.post("/auth/register", async (req: Request, res: Response) => {
     },
   });
 
-  //On génére le token
   const token = generateToken(user.id, user.role);
-  //On envoie en réponse le token et le user
 
   res.json({
     success: true,
@@ -96,10 +89,8 @@ router.post("/auth/register", async (req: Request, res: Response) => {
 });
 
 router.post("/auth/login", (req: Request, res: Response) => {
-  //On envoie l'email et le password du front
   const { email, password } = req.body;
 
-  //Vérification
   prisma.user
     .findUnique({ where: { email } })
     .then((user) => {
@@ -128,35 +119,31 @@ router.post("/auth/login", (req: Request, res: Response) => {
 
 // get the feed of all posts, most recent first
 async function getPosts(req: Request, res: Response) {
-
-  try{
+  try {
     // Parsing
-    const rawPage = Number(req.query.page)
-    const rawLimit = Number(req.query.limit)
-    
+    const rawPage = Number(req.query.page);
+    const rawLimit = Number(req.query.limit);
+
     // Get page
     let page = 1;
-      if (Number.isInteger(rawPage) && rawPage >= 1) {
-        page = rawPage;
-      }
+    if (Number.isInteger(rawPage) && rawPage >= 1) {
+      page = rawPage;
+    }
 
     // Get Limit
     let limit = 20;
-      if (Number.isInteger(rawLimit) && rawLimit >= 1) {
-        limit = rawLimit;
-      }
-      if (limit > 50) {
-        limit = 50;
-      }
+    if (Number.isInteger(rawLimit) && rawLimit >= 1) {
+      limit = rawLimit;
+    }
+    if (limit > 50) {
+      limit = 50;
+    }
 
     // Build Offset
-    const skip = (page - 1) * limit
+    const skip = (page - 1) * limit;
 
     const posts = await prisma.post.findMany({
-      orderBy: [
-        { createdAt: "desc" },
-        { id: "desc" }
-      ],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip,
       take: limit,
       include: {
@@ -164,7 +151,7 @@ async function getPosts(req: Request, res: Response) {
           select: { id: true, username: true },
         },
         _count: {
-          select: {likes: true, comments: true },
+          select: { likes: true, comments: true },
         },
       },
     });
@@ -190,9 +177,9 @@ async function getPosts(req: Request, res: Response) {
       total,
       hasMore: skip + items.length < total,
     });
-  } catch (err){
+  } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Impossible de charger le feed" })
+    res.status(500).json({ error: "Impossible de charger le feed" });
   }
 }
 
@@ -216,38 +203,79 @@ async function handleCreatePost(req: Request, res: Response) {
 async function getPostById(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
 
-  const post = await prisma.post.findUnique({
-    where: { id },
-    include: {
-      author: true,
-      comments: {
-        include: { author: true },
-        orderBy: { createdAt: "asc" },
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: { id: true, username: true },
+        },
+        comments: {
+          include: {
+            author: {
+              select: { id: true, username: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
-    },
-  });
+    });
 
-  const likeCount = await prisma.like.count({ where: { postId: id } });
+    if (post === null) {
+      return res.status(404).json({ error: "Post not found" });
+    }
 
-  res.json({
-    id: post.id,
-    content: post.content,
-    imageUrl: post.imageUrl,
-    createdAt: post.createdAt,
-    author: post.author,
-    comments: post.comments,
-    likeCount,
-  });
+    const likeCount = await prisma.like.count({ where: { postId: id } });
+
+    res.json({
+      id: post.id,
+      content: post.content,
+      imageUrl: post.imageUrl,
+      created_at: post.createdAt,
+      author: post.author,
+      comments: post.comments.map((c) => ({
+        id: c.id,
+        content: c.content,
+        created_at: c.createdAt,
+        author: c.author,
+      })),
+      likeCount,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Impossible de charger le post" });
+  }
 }
 
 async function deletePost(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
 
-  await prisma.post.delete({ where: { id } });
+  const userId = req.userId;
 
-  res.json({ success: true });
+  const post = await prisma.post.findUnique({
+    where: { id },
+  });
+
+  if (!post) {
+    return res.status(404).json({
+      error: "Post not found",
+    });
+  }
+
+  if (post.authorId !== userId) {
+    return res.status(403).json({
+      error: "You are not allowed to delete this post",
+    });
+  }
+
+  await prisma.post.delete({
+    where: { id },
+  });
+
+  return res.json({
+    success: true,
+  });
 }
-
 router.get("/posts", getPosts);
 router.post("/posts", authenticate, upload.single("image"), handleCreatePost);
 router.get("/posts/:id", getPostById);
@@ -263,16 +291,39 @@ router.post(
     const { content } = req.body;
     const userId = req.userId;
 
-    const comment = await prisma.comment.create({
-      data: {
-        content,
-        postId: id,
-        authorId: userId,
-      },
-      include: { author: true },
-    });
+    if (typeof content !== "string" || content.trim().length === 0) {
+      return res.status(400).json({ error: "Content is required" });
+    }
 
-    res.json(comment);
+    try {
+      const post = await prisma.post.findUnique({ where: { id } });
+      if (post === null) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      const comment = await prisma.comment.create({
+        data: {
+          content,
+          postId: id,
+          authorId: userId,
+        },
+        include: {
+          author: {
+            select: { id: true, username: true },
+          },
+        },
+      });
+
+      res.json({
+        id: comment.id,
+        content: comment.content,
+        created_at: comment.createdAt,
+        author: comment.author,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Impossible de créer le commentaire" });
+    }
   },
 );
 
