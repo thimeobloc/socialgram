@@ -78,13 +78,16 @@ function CreatePost({ token, onPostCreated }: CreatePostProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-3 rounded-2xl border border-cream bg-white p-5 shadow-sm"
+    >
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         maxLength={max_length}
         placeholder="Quoi de neuf ?"
-        className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="border border-cream bg-paper text-ink rounded-lg p-3 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
       />
 
       <input
@@ -92,14 +95,14 @@ function CreatePost({ token, onPostCreated }: CreatePostProps) {
         accept="image/jpeg,image/png,image/webp"
         onChange={handleImageChange}
         disabled={status === "submitting"}
-        className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="border border-cream bg-paper text-sm text-slate rounded-lg p-2 file:mr-3 file:rounded-full file:border-0 file:bg-brand file:px-4 file:py-1.5 file:text-sm file:font-semibold file:text-white focus:outline-none focus:ring-2 focus:ring-brand/30"
       />
 
       {preview && (
         <img
           src={preview}
           alt="Aperçu"
-          className="max-w-xs max-h-64 rounded-md object-cover"
+          className="max-w-xs max-h-64 rounded-xl object-cover"
         />
       )}
 
@@ -112,7 +115,7 @@ function CreatePost({ token, onPostCreated }: CreatePostProps) {
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        className="self-start rounded-full bg-brand px-6 py-2 font-semibold text-white transition-colors hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:opacity-50"
       >
         {status === "submitting" ? "Envoi en cours..." : "Publier"}
       </button>

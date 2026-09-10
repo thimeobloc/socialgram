@@ -14,28 +14,28 @@ function formatDate(iso: string): string {
 
 export default function PostCard({ post }: { post: Post }) {
   return (
-    <article className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-3">
+    <article className="bg-white border border-cream rounded-2xl shadow-sm p-6 flex flex-col gap-3 transition-shadow hover:shadow-md">
       <Link to={`/posts/${post.id}`} className="flex flex-col gap-3">
         <header className="flex items-center justify-between">
-          <span className="font-semibold text-gray-800">
+          <span className="font-semibold text-ink">
             {post.author?.username ?? "Utilisateur supprimé"}
           </span>
-          <time className="text-sm text-gray-500">{formatDate(post.created_at)}</time>
+          <time className="text-sm text-slate">{formatDate(post.created_at)}</time>
         </header>
 
-        <p className="text-gray-700 whitespace-pre-line">{post.content}</p>
+        <p className="text-ink/80 whitespace-pre-line">{post.content}</p>
 
         {post.imageUrl && (
           <img
             src={`${API_URL}${post.imageUrl}`}
             alt=""
             loading="lazy"
-            className="w-full rounded-lg object-cover"
+            className="w-full rounded-xl object-cover"
           />
         )}
       </Link>
 
-      <footer className="text-sm text-gray-500 flex gap-4">
+      <footer className="text-sm text-slate flex gap-4 border-t border-cream pt-3">
         <span>❤️ {post.likeCount}</span>
         <span>💬 {post.commentCount}</span>
       </footer>

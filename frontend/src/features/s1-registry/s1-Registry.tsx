@@ -162,13 +162,18 @@ export default function Registry() {
     }
 
     return (
-        <>
-            <div className="flex flex-col gap-4 max-w-sm mx-auto mt-20 p-8 bg-white rounded-2xl shadow-lg">
+        <div className="flex flex-col items-center max-w-sm mx-auto mt-16 px-4">
+            <p className="font-display text-4xl uppercase text-brand">Groupy</p>
+            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.25em] text-slate">
+                Find your group
+            </p>
 
-                <h1 className="text-2xl font-bold text-gray-800 text-center mb-2">S'inscrire</h1>
+            <div className="flex w-full flex-col gap-4 p-8 bg-white border border-cream rounded-2xl shadow-sm">
+
+                <h1 className="font-display text-2xl uppercase text-ink text-center mb-2">S'inscrire</h1>
 
                 {isEmpty && !loading && !success && (
-                    <p>
+                    <p className="text-sm text-slate">
                         Remplissez les champs pour créer votre compte.
                     </p>
                 )}
@@ -176,7 +181,7 @@ export default function Registry() {
                 <input
                     type="text"
                     placeholder="Username"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-cream bg-paper text-ink rounded-lg focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={loading}
@@ -191,7 +196,7 @@ export default function Registry() {
                 <input
                     type="email"
                     placeholder="Email"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-cream bg-paper text-ink rounded-lg focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
@@ -206,7 +211,7 @@ export default function Registry() {
                 <input
                     type="password"
                     placeholder="Password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-cream bg-paper text-ink rounded-lg focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
@@ -221,7 +226,7 @@ export default function Registry() {
                 <input
                     type="password"
                     placeholder="Password confirmation"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-cream bg-paper text-ink rounded-lg focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
                     value={passwordConfirmation}
                     onChange={(e) => setPasswordConfirmation(e.target.value)}
                     disabled={loading}
@@ -234,11 +239,11 @@ export default function Registry() {
                 )}
 
                 {success && (
-                    <p className="text-green-500"> Compte créé avec succès ! </p>
+                    <p className="text-green-600"> Compte créé avec succès ! </p>
                 )}
 
                 {loading && (
-                    <p>Création de votre compte...</p>
+                    <p className="text-sm text-slate">Création de votre compte...</p>
                 )}
 
                 {errors.general && (
@@ -248,7 +253,7 @@ export default function Registry() {
                 )}
 
                 <button
-                    className="w-full py-2 mt-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                    className="w-full py-2.5 mt-2 bg-brand text-white font-semibold rounded-full hover:bg-brand-dark transition-colors disabled:opacity-50"
                     onClick={() =>
                         register(
                             username,
@@ -262,8 +267,8 @@ export default function Registry() {
                     {loading ? "Inscription..." : "S'inscrire"}
                 </button>
 
-                <a href="/login" className="text-sm text-blue-600 text-center hover:underline mt-2"> Se connecter</a>
+                <a href="/login" className="text-sm font-medium text-brand text-center hover:underline mt-1"> Se connecter</a>
             </div>
-        </>
+        </div>
     );
 }

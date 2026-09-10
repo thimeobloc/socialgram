@@ -30,10 +30,10 @@ export function CommentItem({ comment, canDelete, token, onDeleted }: Props) {
   }
 
   return (
-    <li className="group relative bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-700">
+    <li className="group relative bg-paper border border-cream rounded-lg px-3 py-2 text-sm text-ink/80">
       <div className="flex items-start justify-between gap-2">
         <span>
-          <strong className="text-gray-800">{comment.author.username}</strong> : {comment.content}
+          <strong className="text-ink">{comment.author.username}</strong> : {comment.content}
         </span>
 
         {canDelete && !confirming && (
@@ -41,7 +41,7 @@ export function CommentItem({ comment, canDelete, token, onDeleted }: Props) {
             type="button"
             onClick={() => setConfirming(true)}
             aria-label="Supprimer le commentaire"
-            className="shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition text-gray-400 hover:text-red-600"
+            className="shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition text-slate hover:text-red-600"
           >
             🗑️
           </button>
@@ -55,7 +55,7 @@ export function CommentItem({ comment, canDelete, token, onDeleted }: Props) {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="rounded bg-red-600 px-2 py-1 text-white disabled:opacity-50"
+            className="rounded-full bg-red-600 px-3 py-1 text-white disabled:opacity-50"
           >
             {deleting ? "Suppression…" : "Oui, supprimer"}
           </button>
@@ -63,7 +63,7 @@ export function CommentItem({ comment, canDelete, token, onDeleted }: Props) {
             type="button"
             onClick={() => { setConfirming(false); setError(null); }}
             disabled={deleting}
-            className="rounded border border-gray-300 px-2 py-1"
+            className="rounded-full border border-brand px-3 py-1 text-brand"
           >
             Annuler
           </button>

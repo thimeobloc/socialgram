@@ -8,7 +8,7 @@ export default function ProtectedRoute() {
   const { status } = useAuth();
 
   if (status === "loading") {
-    return <p className="mt-20 text-center text-gray-500">Chargement…</p>;
+    return <p className="mt-20 text-center text-slate">Chargement…</p>;
   }
 
   if (status === "unauthenticated") {

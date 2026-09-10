@@ -33,7 +33,7 @@ export default function Profile() {
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   if (screen.status === "loading") {
-    return <p className="mt-20 text-center text-gray-500">Chargement…</p>;
+    return <p className="mt-20 text-center text-slate">Chargement…</p>;
   }
 
 
@@ -50,17 +50,22 @@ export default function Profile() {
 
   return (
 
-    <main className="mx-auto max-w-xl p-6">
-      <header className="flex items-center justify-between border-b border-gray-200 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {screen.user.username}
-        </h1>
+    <main className="mx-auto max-w-xl px-4 py-10">
+      <header className="flex items-center justify-between rounded-2xl bg-brand px-5 py-4 text-white">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cream">
+            Groupy · Profil
+          </p>
+          <h1 className="font-display text-2xl uppercase leading-none">
+            {screen.user.username}
+          </h1>
+        </div>
 
         {canEdit && (
           <button
             type="button"
             onClick={() => setIsEditOpen(true)}
-            className="rounded-md border border-gray-300 px-4 py-1.5 text-sm font-medium hover:bg-gray-50"
+            className="rounded-full border border-white/40 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
           >
             Modifier le profil
           </button>
@@ -68,22 +73,22 @@ export default function Profile() {
       </header>
 
       {screen.status === "empty" ? (
-        <p className="mt-6 text-gray-500">Aucun post.</p>
+        <p className="mt-6 text-slate">Aucun post.</p>
       ) : (
-        <ul className="mt-6 flex flex-col gap-2">
+        <ul className="mt-6 flex flex-col gap-3">
           {screen.posts.map((post) => (
             <li
               key={post.id}
-              className="relative rounded-xl border border-gray-200 bg-white p-4 pr-28 shadow-sm transition hover:shadow-md"
+              className="relative rounded-2xl border border-cream bg-white p-4 pr-28 shadow-sm transition hover:shadow-md"
             >
               <button
                 onClick={() => setConfirmationDeletion(post.id)}
-                className="absolute right-4 top-4 rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-600 active:scale-95"
+                className="absolute right-4 top-4 rounded-full bg-red-500 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-600 active:scale-95"
               >
                 Supprimer
               </button>
 
-              <p className="whitespace-pre-line text-gray-700">
+              <p className="whitespace-pre-line text-ink/80">
                 {post.content}
               </p>
 
@@ -127,14 +132,14 @@ export default function Profile() {
 
                         setConfirmationDeletion(null);
                       }}
-                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 active:scale-95"
+                      className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 active:scale-95"
                     >
                       Oui, supprimer
                     </button>
 
                     <button
                       onClick={() => setConfirmationDeletion(null)}
-                      className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 active:scale-95"
+                      className="rounded-full border border-brand bg-white px-4 py-2 text-sm font-semibold text-brand transition hover:bg-cream active:scale-95"
                     >
                       Annuler
                     </button>

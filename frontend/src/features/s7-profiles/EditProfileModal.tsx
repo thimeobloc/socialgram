@@ -51,13 +51,13 @@ export default function EditProfileModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-profile-title"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg"
+        className="w-full max-w-md rounded-2xl border border-cream bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <h2
             id="edit-profile-title"
-            className="text-lg font-semibold text-gray-900"
+            className="font-display text-lg uppercase text-ink"
           >
             Modifier le profil
           </h2>
@@ -65,29 +65,29 @@ export default function EditProfileModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="rounded p-1 text-gray-500 hover:bg-gray-100"
+            className="rounded-full p-1 text-slate hover:bg-cream"
           >
             ✕
           </button>
         </div>
 
         <form className="mt-4 flex flex-col gap-3" onSubmit={handleSubmit}>
-          <label className="flex flex-col gap-1 text-sm text-gray-700">
+          <label className="flex flex-col gap-1 text-sm font-medium text-slate">
             Nom d'utilisateur
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2"
+              className="rounded-lg border border-cream bg-paper px-3 py-2 text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-gray-700">
+          <label className="flex flex-col gap-1 text-sm font-medium text-slate">
             Email
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2"
+              className="rounded-lg border border-cream bg-paper px-3 py-2 text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
           </label>
 
@@ -101,14 +101,14 @@ export default function EditProfileModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-gray-300 px-4 py-1.5 text-sm"
+              className="rounded-full border border-brand px-4 py-1.5 text-sm font-semibold text-brand hover:bg-cream"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-full bg-brand px-5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:opacity-50"
             >
               {saving ? "Enregistrement…" : "Enregistrer"}
             </button>

@@ -10,7 +10,11 @@ export function PostDetail() {
   const { id } = useParams<{ id: string }>();
 
   if (!id) {
-    return <p role="alert">Post introuvable</p>;
+    return (
+      <p role="alert" className="mt-20 text-center text-slate">
+        Post introuvable
+      </p>
+    );
   }
 
   const state = usePostDetail(id);
@@ -50,21 +54,21 @@ export function PostDetail() {
   switch (state.status) {
     case "loading":
       return (
-        <div className="flex justify-center items-center py-20 text-gray-500">
+        <div className="flex justify-center items-center py-20 text-slate">
           Chargement...
         </div>
       );
 
     case "not_found":
       return (
-        <div className="max-w-xl mx-auto mt-10 bg-white rounded-2xl shadow-lg p-6 text-center text-gray-600" role="alert">
+        <div className="max-w-xl mx-auto mt-10 bg-white border border-cream rounded-2xl shadow-sm p-6 text-center text-slate" role="alert">
           Ce post n'existe pas.
         </div>
       );
 
     case "error":
       return (
-        <div className="max-w-xl mx-auto mt-10 bg-red-50 text-red-700 rounded-2xl shadow p-6 text-center" role="alert">
+        <div className="max-w-xl mx-auto mt-10 bg-red-50 text-red-700 rounded-2xl shadow-sm p-6 text-center" role="alert">
           {state.message}
         </div>
       );
@@ -76,32 +80,32 @@ export function PostDetail() {
       );
 
       return (
-        <article className="max-w-xl mx-auto mt-6 bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4">
+        <article className="max-w-xl mx-auto mt-6 bg-white border border-cream rounded-2xl shadow-sm p-6 flex flex-col gap-4">
           <header className="flex items-center justify-between">
-            <span className="font-semibold text-gray-800">{post.author.username}</span>
-            <time className="text-sm text-gray-500">
+            <span className="font-semibold text-ink">{post.author.username}</span>
+            <time className="text-sm text-slate">
               {new Date(post.created_at).toLocaleString("fr-FR")}
             </time>
           </header>
 
-          <p className="text-gray-700 whitespace-pre-line">{post.content}</p>
+          <p className="text-ink/80 whitespace-pre-line">{post.content}</p>
 
           {post.imageUrl && (
-            <img src={post.imageUrl} alt="" className="w-full rounded-lg object-cover" />
+            <img src={post.imageUrl} alt="" className="w-full rounded-xl object-cover" />
           )}
 
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate">
             ❤️ {post.likeCount} like{post.likeCount !== 1 ? "s" : ""}
           </p>
 
-          <section aria-label="Commentaires" className="border-t pt-4 flex flex-col gap-3">
-            <h2 className="font-semibold text-gray-800">
+          <section aria-label="Commentaires" className="border-t border-cream pt-4 flex flex-col gap-3">
+            <h2 className="font-display text-lg uppercase text-ink">
               Commentaires ({allComments.length})
             </h2>
 
             <ul className="flex flex-col gap-2">
               {allComments.length === 0 ? (
-                <li className="text-gray-500 text-sm">Aucun commentaire pour l'instant.</li>
+                <li className="text-slate text-sm">Aucun commentaire pour l'instant.</li>
               ) : (
                 allComments.map((c) => (
                   <CommentItem
@@ -128,7 +132,7 @@ export function PostDetail() {
                   onChange={(e) => setContent(e.target.value)}
                   disabled={submitting}
                   placeholder="Ajouter un commentaire..."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
+                  className="w-full rounded-lg border border-cream bg-paper px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:opacity-60"
                 />
                 {submitError && (
                   <p role="alert" className="text-red-600 text-sm mt-1">
@@ -139,7 +143,7 @@ export function PostDetail() {
               <button
                 type="submit"
                 disabled={submitting || content.trim().length === 0}
-                className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+                className="bg-brand text-white rounded-full px-5 py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brand-dark transition-colors"
               >
                 {submitting ? "Envoi..." : "Publier"}
               </button>
