@@ -8,19 +8,30 @@ import Delete from "../s8-deletion/postDeletion";
 
 export default function Profile() {
 
+  type ScreenState =
+  | { status: "loading" }
+  | { status: "error" }
+  | {
+    status: "ready";
+    username: string;
+    posts: { id: string; content: string }[];
+  };
+
   //Post deletion confirmation
   const [confirmPostDeletion, setConfirmationDeletion] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { id: routeId } = useParams<{ id: string }>();
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
 
   const profileId = routeId ?? user?.id;
   const isOwner = routeId === undefined || routeId === user?.id;
 
-  const { screen, showUsername } = useProfile(profileId);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { screen, showUsername } = useProfile(profileId)
+  const [state, setState] = useState<ScreenState>({ status: "loading" });
 
+  const [isEditOpen, setIsEditOpen] = useState(false); 
+  
   if (screen.status === "loading") {
     return <p className="mt-20 text-center text-gray-500">Chargement…</p>;
   }
@@ -28,7 +39,7 @@ export default function Profile() {
 
   if (screen.status === "error") {
     return <p className="mt-20 text-center text-red-600">{screen.message}</p>;
-
+  }
   if (state.status === "error") {
     return (
       <p className="mt-20 text-center text-red-600">Profil introuvable.</p>
@@ -151,7 +162,10 @@ export default function Profile() {
             currentUsername={screen.user.username}
             currentEmail={user.email}
             onClose={() => setIsEditOpen(false)}
-            onSaved={showUsername}
+            onSaved={(updated) => {
+              showUsername(updated.username);
+              updateUser(updated);
+            }}
           />
         )}
     </main>

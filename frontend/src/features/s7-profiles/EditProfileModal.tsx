@@ -8,7 +8,7 @@ type Props = {
   currentUsername: string;
   currentEmail: string;
   onClose: () => void;
-  onSaved: (username: string) => void;
+  onSaved: (updated: { username: string; email: string }) => void;
 };
 
 export default function EditProfileModal({
@@ -37,7 +37,7 @@ export default function EditProfileModal({
     } else if (result.status === "error") {
       setError("Impossible d'enregistrer");
     } else {
-      onSaved(result.username);
+      onSaved({ username: result.username, email: result.email });
       onClose();
     }
   }
