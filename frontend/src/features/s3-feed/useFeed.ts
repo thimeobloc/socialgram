@@ -4,7 +4,7 @@ import type { Post } from "./feed.schema";
 
 type Status = "loading" | "error" | "empty" | "success";
 
-export function useFeed() {
+export function useFeed(token: string | null) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [status, setStatus] = useState<Status>("loading");
   const [errorMessage, setErrorMessage] = useState("");
@@ -16,7 +16,7 @@ export function useFeed() {
   const loadFirstPage = useCallback(() => {
     setStatus("loading");
     setErrorMessage("");
-    fetchFeed(1)
+    fetchFeed(1, token)
       .then((data) => {
         if (data.items.length === 0) {
           setStatus("empty");
@@ -31,7 +31,7 @@ export function useFeed() {
         setErrorMessage(err.message);
         setStatus("error");
       });
-  }, []);
+  }, [token]);
 
   // --- Start loading ---
   useEffect(() => {
@@ -42,17 +42,17 @@ export function useFeed() {
   const loadMore = useCallback(() => {
     if (isLoadingMore || !hasMore) return; 
     const nextPage = page + 1;
-    setIsLoadingMore(true);                
+    setIsLoadingMore(true);
     setErrorMessage("");
-    fetchFeed(nextPage)
+    fetchFeed(nextPage, token)
       .then((data) => {
-        setPosts((prev) => [...prev, ...data.items]); 
+        setPosts((prev) => [...prev, ...data.items]);
         setHasMore(data.hasMore);
         setPage(nextPage);
       })
       .catch((err: Error) => setErrorMessage(err.message))
       .finally(() => setIsLoadingMore(false));
-  }, [page, hasMore, isLoadingMore]);
+  }, [page, hasMore, isLoadingMore, token]);
 
   const addPost = useCallback((newPost: Post) => {
   setPosts((prev) => [newPost, ...prev]);

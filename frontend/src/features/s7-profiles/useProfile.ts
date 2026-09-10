@@ -57,5 +57,27 @@ export function useProfile(userId: string | undefined) {
     });
   }
 
-  return { screen, showUsername };
+  function removePost(postId: string) {
+    setScreen((current) => {
+      if (current.status !== "success") {
+        return current;
+      }
+
+      const posts = current.posts.filter((post) => post.id !== postId);
+
+      if (posts.length === 0) {
+        return {
+          status: "empty",
+          user: current.user,
+        };
+      }
+
+      return {
+        ...current,
+        posts,
+      };
+    });
+  }
+
+  return { screen, showUsername, removePost };
 }

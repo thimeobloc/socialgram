@@ -8,8 +8,8 @@ import type { CreatedPost } from "../s4-creatPost/posts.types";
 import type { Post } from "./feed.schema";
 
 export default function Feed() {
-  const { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry, addPost } = useFeed();
   const { token, user } = useAuth();
+  const { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry, addPost } = useFeed(token);
 
   function handlePostCreated(created: CreatedPost) {
     if (!user) return; 

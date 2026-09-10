@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../shared/auth/useAuth";
 import EditProfileModal from "./EditProfileModal";
@@ -9,13 +9,13 @@ import Delete from "../s8-deletion/postDeletion";
 export default function Profile() {
 
   type ScreenState =
-  | { status: "loading" }
-  | { status: "error" }
-  | {
-    status: "ready";
-    username: string;
-    posts: { id: string; content: string }[];
-  };
+    | { status: "loading" }
+    | { status: "error" }
+    | {
+      status: "ready";
+      username: string;
+      posts: { id: string; content: string }[];
+    };
 
   //Post deletion confirmation
   const [confirmPostDeletion, setConfirmationDeletion] = useState<string | null>(null);
@@ -27,11 +27,11 @@ export default function Profile() {
   const profileId = routeId ?? user?.id;
   const isOwner = routeId === undefined || routeId === user?.id;
 
-  const { screen, showUsername } = useProfile(profileId)
+  const { screen, showUsername, removePost } = useProfile(profileId);
   const [state, setState] = useState<ScreenState>({ status: "loading" });
 
-  const [isEditOpen, setIsEditOpen] = useState(false); 
-  
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   if (screen.status === "loading") {
     return <p className="mt-20 text-center text-gray-500">Chargement…</p>;
   }
@@ -122,6 +122,8 @@ export default function Profile() {
 
                           };
                         });
+
+                        removePost(post.id);
 
                         setConfirmationDeletion(null);
                       }}

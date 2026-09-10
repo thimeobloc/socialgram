@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { login as loginRequest } from "../../features/s2-login/auth.api";
 import { AuthUserSchema, type AuthUser } from "../../features/s2-login/auth.schema";
+import { setUnauthorizedHandler } from "./unauthorized";
 
 // We keep the token in localStorage (not a cookie) because the API is a
 // separate origin and expects a `Bearer` header. It is readable by JS, so
@@ -120,7 +121,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("unauthenticated");
     navigate("/login", { replace: true });
   }
+  
+  // Let the non-React API layer trigger a clean logout when it receives a
+  // 401 mid-session. Registered once: `logout` only closes over stable
+  // setters and `navigate`, so the first instance stays valid.
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+  }, []);
 
-  const value: AuthValue = { status, user, token, login, logout, updateUser };
+  const value: AuthValue = { status, user, token, login, logout };
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -22,6 +22,10 @@ Content-Type: application/json
 
 ### Get feed
 GET {{baseUrl}}/posts
+Authorization: Bearer {{token}}
+
+### Get feed - no token (doit renvoyer 401)
+GET {{baseUrl}}/posts
 
 ### Get single post
 GET {{baseUrl}}/posts/REPLACE_ME

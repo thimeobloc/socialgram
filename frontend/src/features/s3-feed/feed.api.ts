@@ -1,15 +1,28 @@
 import { API_URL } from "./config";
 import { feedResponseSchema, type FeedResponse } from "./feed.schema";
+import { notifyUnauthorized } from "../../shared/auth/unauthorized";
 
-export async function fetchFeed(page: number, limit = 20): Promise<FeedResponse> {
+export async function fetchFeed(
+  page: number,
+  token: string | null,
+  limit = 20,
+): Promise<FeedResponse> {
   let res: Response;
 
   // --- TRY TO CALL NETWORK ---
   try {
-    res = await fetch(`${API_URL}/posts?page=${page}&limit=${limit}`);
+    res = await fetch(`${API_URL}/posts?page=${page}&limit=${limit}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
   } catch {
     // fetch ne rejette QUE si le serveur est injoignable / pas de réseau
     throw new Error("Impossible de contacter le serveur");
+  }
+
+  // --- SESSION EXPIRÉE ---
+  if (res.status === 401) {
+    notifyUnauthorized();
+    throw new Error("Session expirée, reconnecte-toi");
   }
 
   // --- HTTP STATUS (404 or 500) ---
