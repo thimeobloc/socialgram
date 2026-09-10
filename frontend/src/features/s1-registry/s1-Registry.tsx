@@ -24,7 +24,6 @@ export default function Registry() {
         !password &&
         !passwordConfirmation;
 
-    // Fonction qui envoie au back
     async function register(username: string, email: string, password: string, passwordConfirmation: string) {
 
         setError({
@@ -91,7 +90,6 @@ export default function Registry() {
             return;
         }
 
-        // Début du chargement
         setLoading(true);
 
         try {
@@ -169,7 +167,6 @@ export default function Registry() {
 
                 <h1 className="text-2xl font-bold text-gray-800 text-center mb-2">S'inscrire</h1>
 
-                {/* État EMPTY */}
                 {isEmpty && !loading && !success && (
                     <p>
                         Remplissez les champs pour créer votre compte.

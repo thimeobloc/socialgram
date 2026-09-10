@@ -25,6 +25,7 @@ type AuthValue = {
   token: string | null;
   login: (email: string, password: string) => Promise<LoginOutcome>;
   logout: () => void;
+  updateUser: (changes: Partial<AuthUser>) => void;
 };
 
 export const AuthContext = createContext<AuthValue | null>(null);
@@ -107,6 +108,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }
 
+  // Keeps the in-memory user in sync after the owner edits their profile,
+  // so the app does not need a full reload to show the new name or email.
+  function updateUser(changes: Partial<AuthUser>) {
+    setUser((current) => (current === null ? current : { ...current, ...changes }));
+  }
+
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -114,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("unauthenticated");
     navigate("/login", { replace: true });
   }
-
+  
   // Let the non-React API layer trigger a clean logout when it receives a
   // 401 mid-session. Registered once: `logout` only closes over stable
   // setters and `navigate`, so the first instance stays valid.
@@ -123,5 +130,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value: AuthValue = { status, user, token, login, logout };
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
