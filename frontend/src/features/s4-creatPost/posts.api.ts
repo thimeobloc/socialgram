@@ -1,4 +1,5 @@
 import { CreatePostResponseSchema, type CreatedPost } from "./posts.types";
+import { notifyUnauthorized } from "../../shared/auth/unauthorized";
 
 type ApiResult<T> =
   | { ok: true; data: T }
@@ -22,6 +23,11 @@ async function dataPost(content: string, img: File | null, token: string): Promi
         },
         body: formData,
     });
+
+    if (res.status === 401) {
+        notifyUnauthorized();
+        return { ok: false, error: "Session expirée, reconnecte-toi." };
+    }
 
     if (!res.ok) {
         return {

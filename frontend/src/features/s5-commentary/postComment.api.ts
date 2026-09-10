@@ -1,4 +1,5 @@
 import { postDetailSchema, type PostDetail, type Comment, commentSchema } from "./postDetail.schema";
+import { notifyUnauthorized } from "../../shared/auth/unauthorized";
 
 type ApiResult<T> =
   | { ok: true; data: T }
@@ -57,6 +58,11 @@ export async function postComment(
     });
 
     // Handle unsuccessful HTTP responses
+    if (res.status === 401) {
+      notifyUnauthorized();
+      return { ok: false, error: "Session expirée, reconnecte-toi" };
+    }
+
     if (!res.ok) {
       return { ok: false, error: "Impossible de publier le commentaire" };
     }

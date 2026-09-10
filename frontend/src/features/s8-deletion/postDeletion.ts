@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DeleteResponseSchema } from "./postDeletion.schema";
+import { notifyUnauthorized } from "../../shared/auth/unauthorized";
 
 type DeleteResult =
   | {
@@ -30,6 +31,11 @@ export default async function Delete(
     });
 
     const data = await response.json();
+
+    if (response.status === 401) {
+      notifyUnauthorized();
+      return { success: false, error: "Session expirée, reconnecte-toi." };
+    }
 
     if (!response.ok) {
       if (

@@ -88,6 +88,18 @@ router.post("/auth/register", async (req: Request, res: Response) => {
   });
 });
 
+router.get("/auth/me", authenticate, async (req: Request, res: Response) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.userId },
+    select: { id: true, email: true, username: true },
+  });
+  if (!user) {
+    return res.status(401).json({ error: "User not found" });
+  }
+  res.json(user);
+});
+
+
 router.post("/auth/login", (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -95,12 +107,12 @@ router.post("/auth/login", (req: Request, res: Response) => {
     .findUnique({ where: { email } })
     .then((user) => {
       if (!user) {
-        return res.status(200).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Invalid credentials" });
       }
 
       const valid = bcrypt.compareSync(password, user.password);
       if (!valid) {
-        return res.status(200).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Invalid credentials" });
       }
 
       const token = generateToken(user.id, user.role);
@@ -382,13 +394,21 @@ router.delete(
 // ==================== USERS ====================
 
 // fetch a user by id
-function fetch_user(req: Request<{ id: string }>, res: Response) {
+async function fetch_user(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
 
-  prisma.user.findUnique({ where: { id } }).then((user) => {
-    res.json(user);
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, username: true, createdAt: true },
   });
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json(user);
 }
+
 
 async function getUserPosts(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;

@@ -15,12 +15,12 @@ export default function App() {
         <Route path="/" element={<Navigate to="/feed" replace />} />
         <Route path="/login" element={<LoginPages />} />
         <Route path="/register" element={<RegistryPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/users/:id" element={<ProfilePage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/posts/:id" element={<PostDetail />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/users/:id" element={<ProfilePage />} />
         </Route>
       </Routes>
     </AuthProvider>
