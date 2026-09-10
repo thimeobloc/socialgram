@@ -46,3 +46,36 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   req.userRole = payload.data.role;
   next();
 }
+
+// Same checks as authenticate, but never blocks: an anonymous visitor
+// must still be able to read the feed.
+export function optionalAuthenticate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const header = req.headers.authorization;
+  if (!header) {
+    return next();
+  }
+
+  const token = header.split(" ")[1];
+  if (!token) {
+    return next();
+  }
+
+  let decoded: unknown;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return next();
+  }
+
+  const payload = TokenPayloadSchema.safeParse(decoded);
+  if (payload.success) {
+    req.userId = payload.data.userId;
+    req.userRole = payload.data.role;
+  }
+
+  return next();
+}

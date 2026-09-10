@@ -9,7 +9,7 @@ import type { Post } from "./feed.schema";
 
 export default function Feed() {
   const { token, user } = useAuth();
-  const { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry, addPost } = useFeed(token);
+  const { posts, status, errorMessage, hasMore, isLoadingMore, loadMore, retry, addPost, toggleLike, pendingLikeIds, likeErrorMessage } = useFeed(token);
 
   function handlePostCreated(created: CreatedPost) {
     if (!user) return; 
@@ -21,6 +21,7 @@ export default function Feed() {
       author: { id: user.id, username: user.username },
       likeCount: 0,
       commentCount: 0,
+      likedByMe: false,
     };
     addPost(newPost);
   }
@@ -64,8 +65,16 @@ export default function Feed() {
       {/* Displays the creation form only if the user is authenticated. */}
       {token && <CreatePost token={token} onPostCreated={handlePostCreated} />}
 
+      {likeErrorMessage && <p className="text-sm text-red-600">{likeErrorMessage}</p>}
+
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard
+          key={post.id}
+          post={post}
+          onToggleLike={toggleLike}
+          isPending={pendingLikeIds.includes(post.id)}
+          canLike={Boolean(token)}
+        />
       ))}
 
       {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
