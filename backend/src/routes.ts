@@ -216,28 +216,48 @@ async function handleCreatePost(req: Request, res: Response) {
 async function getPostById(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
 
-  const post = await prisma.post.findUnique({
-    where: { id },
-    include: {
-      author: true,
-      comments: {
-        include: { author: true },
-        orderBy: { createdAt: "asc" },
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: { id: true, username: true },
+        },
+        comments: {
+          include: {
+            author: {
+              select: { id: true, username: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
-    },
-  });
+    });
 
-  const likeCount = await prisma.like.count({ where: { postId: id } });
+    if (post === null) {
+      return res.status(404).json({ error: "Post not found" });
+    }
 
-  res.json({
-    id: post.id,
-    content: post.content,
-    imageUrl: post.imageUrl,
-    createdAt: post.createdAt,
-    author: post.author,
-    comments: post.comments,
-    likeCount,
-  });
+    const likeCount = await prisma.like.count({ where: { postId: id } });
+
+    res.json({
+      id: post.id,
+      content: post.content,
+      imageUrl: post.imageUrl,
+      created_at: post.createdAt,
+      author: post.author,
+      comments: post.comments.map((c) => ({
+        id: c.id,
+        content: c.content,
+        created_at: c.createdAt,
+        author: c.author,
+      })),
+      likeCount,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Impossible de charger le post" });
+  }
 }
 
 async function deletePost(req: Request<{ id: string }>, res: Response) {
@@ -263,16 +283,39 @@ router.post(
     const { content } = req.body;
     const userId = req.userId;
 
-    const comment = await prisma.comment.create({
-      data: {
-        content,
-        postId: id,
-        authorId: userId,
-      },
-      include: { author: true },
-    });
+    if (typeof content !== "string" || content.trim().length === 0) {
+      return res.status(400).json({ error: "Content is required" });
+    }
 
-    res.json(comment);
+    try {
+      const post = await prisma.post.findUnique({ where: { id } });
+      if (post === null) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      const comment = await prisma.comment.create({
+        data: {
+          content,
+          postId: id,
+          authorId: userId,
+        },
+        include: {
+          author: {
+            select: { id: true, username: true },
+          },
+        },
+      });
+
+      res.json({
+        id: comment.id,
+        content: comment.content,
+        created_at: comment.createdAt,
+        author: comment.author,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Impossible de créer le commentaire" });
+    }
   },
 );
 
