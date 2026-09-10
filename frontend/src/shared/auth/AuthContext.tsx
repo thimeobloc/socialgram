@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(logout);
   }, []);
 
-  const value: AuthValue = { status, user, token, login, logout };
+  const value: AuthValue = { status, user, token, login, logout, updateUser };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
