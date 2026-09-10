@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { authenticate, generateToken } from "../auth";
 import { prisma, router } from "./config.route";
 
@@ -8,10 +7,10 @@ import { prisma, router } from "./config.route";
 
 // The request body is external input (typed `any` by Express), so we
 // validate its shape before using it.
-const LoginBodySchema = z.object({
+/* const LoginBodySchema = z.object({
   email: z.string(),
   password: z.string(),
-});
+}); */
 
 router.post("/auth/register", async (req: Request, res: Response) => {
   //fetch email and name from front

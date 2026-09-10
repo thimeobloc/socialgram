@@ -6,7 +6,7 @@ import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
-import router from "./routes";
+import router from "./routes/routes";
 
 const uploadsDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadsDir)) {

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "lint": "eslint .",
     "start": "node dist/index.js",
     "seed": "tsx prisma/seed.ts",
     "gen-images": "tsx scripts/generate-images.ts",

@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { DeleteResponseSchema } from "./postDeletion.schema";
 import { notifyUnauthorized } from "../../shared/auth/unauthorized";
 
