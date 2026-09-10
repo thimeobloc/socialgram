@@ -37,8 +37,8 @@ export default function EditProfileModal({
     } else if (result.status === "error") {
       setError("Impossible d'enregistrer");
     } else {
-      onSaved({ username: result.username, email: result.email });
       onClose();
+      onSaved({ username: result.username, email: result.email });
     }
   }
 
