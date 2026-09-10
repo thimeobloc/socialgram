@@ -330,13 +330,19 @@ router.delete(
 
 // ==================== USERS ====================
 
-// fetch a user by id
-function fetch_user(req: Request<{ id: string }>, res: Response) {
+async function fetchUser(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
 
-  prisma.user.findUnique({ where: { id } }).then((user) => {
-    res.json(user);
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, username: true, createdAt: true },
   });
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json(user);
 }
 
 async function getUserPosts(req: Request<{ id: string }>, res: Response) {
@@ -350,7 +356,7 @@ async function getUserPosts(req: Request<{ id: string }>, res: Response) {
   res.json(posts);
 }
 
-router.get("/users/:id", fetch_user);
+router.get("/users/:id", fetchUser);
 router.get("/users/:id/posts", getUserPosts);
 
 export default router;
