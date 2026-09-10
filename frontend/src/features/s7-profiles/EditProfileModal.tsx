@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { updateProfile } from "./profile.api";
 
@@ -24,8 +24,27 @@ export default function EditProfileModal({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Close on the Escape key.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (name.trim().length === 0) {
+      setError("Le nom d'utilisateur est obligatoire");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Email invalide");
+      return;
+    }
+
     setSaving(true);
     setError("");
 

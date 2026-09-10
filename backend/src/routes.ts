@@ -539,8 +539,8 @@ async function updateUser(req: Request<{ id: string }>, res: Response) {
   res.json({ id: user.id, username: user.username, email: user.email });
 }
 
-router.get("/users/:id", fetchUser);
-router.get("/users/:id/posts", getUserPosts);
+router.get("/users/:id", authenticate, fetchUser);
+router.get("/users/:id/posts", authenticate, getUserPosts);
 router.patch("/users/:id", authenticate, updateUser);
 
 export default router;
