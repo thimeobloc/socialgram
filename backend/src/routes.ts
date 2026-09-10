@@ -327,17 +327,28 @@ router.post(
   },
 );
 
-router.delete(
-  "/comments/:id",
-  authenticate,
-  async (req: Request<{ id: string }>, res: Response) => {
-    const { id } = req.params;
+async function deleteComment(req: Request<{ id: string }>, res: Response) {
+  const { id } = req.params;
+  const userId = req.userId;
 
-    await prisma.comment.delete({ where: { id } });
+  const comment = await prisma.comment.findUnique({ where: { id } });
 
-    res.json({ success: true });
-  },
-);
+  if (!comment) {
+    return res.status(404).json({ error: "Comment not found" });
+  }
+
+  // c'est ici que se joue "auteur uniquement, vérifié côté backend"
+  if (comment.authorId !== userId) {
+    return res.status(403).json({
+      error: "You are not allowed to delete this comment",
+    });
+  }
+
+  await prisma.comment.delete({ where: { id } });
+
+  return res.json({ success: true });
+}
+router.delete("/comments/:id", authenticate, deleteComment);
 
 // ==================== LIKES ====================
 
