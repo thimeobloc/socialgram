@@ -14,6 +14,7 @@ const prisma = new PrismaClient();
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_POST_LENGTH = 500;
+const MAX_COMMENT_LENGTH = 1000;
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -348,7 +349,7 @@ async function deletePost(req: Request<{ id: string }>, res: Response) {
 }
 router.get("/posts", authenticate, getPosts);
 router.post("/posts", authenticate, uploadImage, handleCreatePost);
-router.get("/posts/:id", getPostById);
+router.get("/posts/:id", authenticate, getPostById);
 router.delete("/posts/:id", authenticate, deletePost);
 
 // ==================== COMMENTS ====================
@@ -362,7 +363,15 @@ router.post(
     const userId = req.userId;
 
     if (typeof content !== "string" || content.trim().length === 0) {
-      return res.status(400).json({ error: "Content is required" });
+      return res
+        .status(400)
+        .json({ error: "Le commentaire ne peut pas être vide" });
+    }
+
+    if (content.length > MAX_COMMENT_LENGTH) {
+      return res
+        .status(400)
+        .json({ error: `Le commentaire dépasse ${MAX_COMMENT_LENGTH} caractères` });
     }
 
     try {
