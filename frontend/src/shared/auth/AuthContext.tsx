@@ -5,16 +5,10 @@ import { login as loginRequest } from "../../features/s2-login/auth.api";
 import { AuthUserSchema, type AuthUser } from "../../features/s2-login/auth.schema";
 import { setUnauthorizedHandler } from "./unauthorized";
 
-// We keep the token in localStorage (not a cookie) because the API is a
-// separate origin and expects a `Bearer` header. It is readable by JS, so
-// it is only acceptable here because the app has no XSS surface of its own.
+// The token lives in localStorage so the session survives a page reload.
 const TOKEN_KEY = "socialgram.token";
 const API_URL = import.meta.env.VITE_API_URL;
 
-// The three states the session can be in:
-// - "loading"        : a token exists, we are asking the API if it is still valid
-// - "authenticated"  : token is valid, `user` is known
-// - "unauthenticated": no token, or the token was refused
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 type LoginOutcome = { ok: true } | { ok: false; error: string };
@@ -36,60 +30,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // On first load, re-read the token and ask the API who we are.
-  // This is why the session "survives a page reload".
+  // On page load: if a token is stored, ask the API who we are.
   useEffect(() => {
     const savedToken = localStorage.getItem(TOKEN_KEY);
-    if (savedToken === null) {
+    if (!savedToken) {
       setStatus("unauthenticated");
       return;
     }
 
-    // Guards against a state update if the component unmounts (or React
-    // StrictMode re-runs the effect) before the request resolves.
-    let cancelled = false;
-
-    function forgetToken() {
-      localStorage.removeItem(TOKEN_KEY);
-      setToken(null);
-      setUser(null);
-      setStatus("unauthenticated");
-    }
-
-    async function checkToken() {
-      try {
-        const response = await fetch(`${API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${savedToken}` },
-        });
-        if (cancelled) return;
-
-        // 401 => token expired or invalid. Clean logout, no redirect loop:
-        // we only land back on "unauthenticated", the router does the rest.
+    fetch(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${savedToken}` },
+    })
+      .then((response) => {
+        // A 401 means the token is expired or invalid.
         if (!response.ok) {
-          forgetToken();
-          return;
+          throw new Error("token refused");
         }
-
-        const data: unknown = await response.json();
+        return response.json();
+      })
+      .then((data: unknown) => {
         const parsed = AuthUserSchema.safeParse(data);
-        if (cancelled) return;
         if (!parsed.success) {
-          forgetToken();
-          return;
+          throw new Error("unexpected shape");
         }
-
         setToken(savedToken);
         setUser(parsed.data);
         setStatus("authenticated");
-      } catch {
-        if (!cancelled) forgetToken();
-      }
-    }
-
-    checkToken();
-    return () => {
-      cancelled = true;
-    };
+      })
+      .catch(() => {
+        // Any failure: drop the bad token, land on "unauthenticated".
+        localStorage.removeItem(TOKEN_KEY);
+        setStatus("unauthenticated");
+      });
   }, []);
 
   async function login(
@@ -108,12 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }
 
-  // Keeps the in-memory user in sync after the owner edits their profile,
-  // so the app does not need a full reload to show the new name or email.
-  function updateUser(changes: Partial<AuthUser>) {
-    setUser((current) => (current === null ? current : { ...current, ...changes }));
-  }
-
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -121,10 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("unauthenticated");
     navigate("/login", { replace: true });
   }
-  
-  // Let the non-React API layer trigger a clean logout when it receives a
-  // 401 mid-session. Registered once: `logout` only closes over stable
-  // setters and `navigate`, so the first instance stays valid.
+
+  // Keeps the stored user in sync after a profile edit (S7).
+  function updateUser(changes: Partial<AuthUser>) {
+    setUser((current) =>
+      current === null ? current : { ...current, ...changes },
+    );
+  }
+
+  // Let the API layer trigger a logout when it gets a 401 mid-session.
   useEffect(() => {
     setUnauthorizedHandler(logout);
   }, []);
