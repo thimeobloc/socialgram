@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
-import { authenticate } from "../auth";
+import { authenticate, optionalAuthenticate } from "../auth";
 import { prisma, router } from "./config.route";
 
 const MAX_POST_LENGTH = 500;
@@ -58,6 +58,8 @@ function uploadImage(req: Request, res: Response, next: NextFunction) {
 
 // get the feed of all posts, most recent first
 async function getPosts(req: Request, res: Response) {
+  const currentUserId = req.userId;
+
   try {
     // Parsing
     const rawPage = Number(req.query.page);
@@ -92,6 +94,13 @@ async function getPosts(req: Request, res: Response) {
         _count: {
           select: { likes: true, comments: true },
         },
+        // Only the current user's like on each post, so we can tell the
+        // front whether to show a filled heart. An empty id matches no
+        // user, which keeps the query identical for anonymous visitors.
+        likes: {
+          where: { userId: currentUserId ?? "" },
+          select: { id: true },
+        },
       },
     });
 
@@ -107,6 +116,7 @@ async function getPosts(req: Request, res: Response) {
       author: post.author,
       likeCount: post._count.likes,
       commentCount: post._count.comments,
+      likedByMe: post.likes.length > 0,
     }));
 
     res.json({
@@ -161,6 +171,7 @@ async function handleCreatePost(req: Request, res: Response) {
 
 async function getPostById(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
+  const currentUserId = req.userId;
 
   try {
     const post = await prisma.post.findUnique({
@@ -186,6 +197,15 @@ async function getPostById(req: Request<{ id: string }>, res: Response) {
 
     const likeCount = await prisma.like.count({ where: { postId: id } });
 
+    // Same like state as the feed, so a post looks identical in both places.
+    let likedByMe = false;
+    if (currentUserId) {
+      const myLike = await prisma.like.findFirst({
+        where: { postId: id, userId: currentUserId },
+      });
+      likedByMe = myLike !== null;
+    }
+
     res.json({
       id: post.id,
       content: post.content,
@@ -199,6 +219,7 @@ async function getPostById(req: Request<{ id: string }>, res: Response) {
         author: c.author,
       })),
       likeCount,
+      likedByMe,
     });
   } catch (err) {
     console.error(err);
@@ -235,7 +256,10 @@ async function deletePost(req: Request<{ id: string }>, res: Response) {
     success: true,
   });
 }
+// The feed stays behind `authenticate`: reading it requires an account.
+// `optionalAuthenticate` on the detail route never blocks anonymous readers,
+// it only identifies the visitor so `likedByMe` can be filled in.
 router.get("/posts", authenticate, getPosts);
 router.post("/posts", authenticate, uploadImage, handleCreatePost);
-router.get("/posts/:id", getPostById);
+router.get("/posts/:id", optionalAuthenticate, getPostById);
 router.delete("/posts/:id", authenticate, deletePost);

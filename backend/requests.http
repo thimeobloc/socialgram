@@ -1,5 +1,5 @@
 @baseUrl = http://localhost:3000
-@token = REPLACE_ME_AFTER_LOGIN
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXR0dGk2bG0wMDAwZ3pmdnl1dzU5czhoIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODg5NDQzNTl9.mpeYAidwgiVX-t1_IrkYZdbB_SL3KteXDhp7xw1tf_8
 
 ### Register
 POST {{baseUrl}}/auth/register
@@ -28,7 +28,8 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/posts
 
 ### Get single post
-GET {{baseUrl}}/posts/REPLACE_ME
+GET {{baseUrl}}/posts/cmttti6sj00ongzfvi405dtie
+Authorization: Bearer {{token}}
 
 ### Create post
 POST {{baseUrl}}/posts
@@ -57,11 +58,19 @@ DELETE {{baseUrl}}/comments/REPLACE_ME
 Authorization: Bearer {{token}}
 
 ### Like post
-POST {{baseUrl}}/posts/REPLACE_ME/like
+POST {{baseUrl}}/posts/cmttti6sj00ongzfvi405dtie/like
 Authorization: Bearer {{token}}
 
 ### Unlike post
-DELETE {{baseUrl}}/posts/REPLACE_ME/like
+DELETE {{baseUrl}}/posts/cmttti6sj00ongzfvi405dtie/like
+Authorization: Bearer {{token}}
+
+### Like post — DEUXIEME FOIS (doit garder le meme likeCount)
+POST {{baseUrl}}/posts/cmttti6sj00ongzfvi405dtie/like
+Authorization: Bearer {{token}}
+
+### Like post inexistant (doit renvoyer 404)
+POST {{baseUrl}}/posts/ce-post-nexiste-pas/like
 Authorization: Bearer {{token}}
 
 ### Get user
