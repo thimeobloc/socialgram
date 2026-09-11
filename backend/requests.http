@@ -29,6 +29,11 @@ GET {{baseUrl}}/posts
 
 ### Get single post
 GET {{baseUrl}}/posts/REPLACE_ME
+Authorization: Bearer {{token}}
+
+### Get single post - inexistant (doit renvoyer 404)
+GET {{baseUrl}}/posts/does-not-exist
+Authorization: Bearer {{token}}
 
 ### Create post
 POST {{baseUrl}}/posts

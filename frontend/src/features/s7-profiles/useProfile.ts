@@ -9,7 +9,7 @@ export type ProfileScreen =
   | { status: "empty"; user: ProfileUser }
   | { status: "success"; user: ProfileUser; posts: ProfilePost[] };
 
-export function useProfile(userId: string | undefined) {
+export function useProfile(userId: string | undefined, token: string | null) {
   const [screen, setScreen] = useState<ProfileScreen>({ status: "loading" });
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function useProfile(userId: string | undefined) {
     let cancelled = false;
     setScreen({ status: "loading" });
 
-    fetchProfile(userId).then((result) => {
+    fetchProfile(userId, token).then((result) => {
       if (cancelled) return;
 
       if (result.status === "not-found") {
@@ -46,7 +46,7 @@ export function useProfile(userId: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, token]);
 
   function showUsername(username: string) {
     setScreen((current) => {

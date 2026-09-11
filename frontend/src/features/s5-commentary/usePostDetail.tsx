@@ -8,16 +8,21 @@ type State<T> =
   | { status: "not_found" }
   | { status: "success"; data: T };
 
-export function usePostDetail(id: string) {
+export function usePostDetail(id: string, token: string | null) {
   const [state, setState] = useState<State<PostDetail>>({ status: "loading" });
 
   useEffect(() => {
+    if (!id) {
+      setState({ status: "not_found" });
+      return;
+    }
+
     // Cancel the request if the component is unmounted or the ID changes
     const controller = new AbortController();
     setState({ status: "loading" });
 
     // Fetch the post details and update the state according to the result
-    getPostById(id, controller.signal)
+    getPostById(id, token, controller.signal)
       .then((result) => {
         if (!result.ok) {
           if (result.error === "NOT_FOUND") {
@@ -36,7 +41,7 @@ export function usePostDetail(id: string) {
       });
 
     return () => controller.abort();
-  }, [id]);
+  }, [id, token]);
 
   return state;
 }

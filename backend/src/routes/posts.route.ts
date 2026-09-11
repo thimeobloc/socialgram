@@ -237,5 +237,5 @@ async function deletePost(req: Request<{ id: string }>, res: Response) {
 }
 router.get("/posts", authenticate, getPosts);
 router.post("/posts", authenticate, uploadImage, handleCreatePost);
-router.get("/posts/:id", getPostById);
+router.get("/posts/:id", authenticate, getPostById);
 router.delete("/posts/:id", authenticate, deletePost);
