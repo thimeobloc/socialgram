@@ -13,7 +13,7 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "..", "uploads"));
+    cb(null, path.join(__dirname, "..", "..", "uploads"));
   },
   filename: (req, file, cb) => {
     // Random name: never trust `file.originalname` (it can contain "../").
