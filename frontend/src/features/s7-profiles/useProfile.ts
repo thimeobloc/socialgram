@@ -51,7 +51,7 @@ export function useProfile(userId: string | undefined) {
   function showUsername(username: string) {
     setScreen((current) => {
       if (current.status === "empty" || current.status === "success") {
-        return { ...current, user: { ...current.user, username } };
+        return { ...current, user: { ...current.user, username } }; // You do not modify the existing object; you create a new one.
       }
       return current;
     });
