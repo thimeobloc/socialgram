@@ -1,11 +1,12 @@
+// Load the .env file first, before any other module reads process.env
+// (auth.ts checks JWT_SECRET as soon as it is imported).
+import "dotenv/config";
+
 import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
-import dotenv from "dotenv";
-import router from "./routes";
-
-dotenv.config();
+import router from "./routes/routes";
 
 const uploadsDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadsDir)) {

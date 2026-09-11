@@ -4,16 +4,36 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 const FIRST_NAMES = [
-  "Alice", "Bob", "Chloe", "David", "Emma", "Farid", "Gaelle", "Hugo",
-  "Ines", "Julien", "Kenza", "Louis", "Maya", "Nathan", "Olivia", "Paul",
-  "Quentin", "Rania", "Sacha", "Théo", "Uma", "Victor", "Wassim", "Yasmine",
-  "Zoe", "Adam", "Bianca", "Camille", "Diego", "Elise",
-];
-
-const LAST_NAMES = [
-  "Martin", "Bernard", "Dubois", "Thomas", "Robert", "Petit", "Durand",
-  "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Garcia",
-  "David", "Bertrand", "Roux", "Vincent", "Fournier", "Morel",
+  "Alice",
+  "Bob",
+  "Chloe",
+  "David",
+  "Emma",
+  "Farid",
+  "Gaelle",
+  "Hugo",
+  "Ines",
+  "Julien",
+  "Kenza",
+  "Louis",
+  "Maya",
+  "Nathan",
+  "Olivia",
+  "Paul",
+  "Quentin",
+  "Rania",
+  "Sacha",
+  "Théo",
+  "Uma",
+  "Victor",
+  "Wassim",
+  "Yasmine",
+  "Zoe",
+  "Adam",
+  "Bianca",
+  "Camille",
+  "Diego",
+  "Elise",
 ];
 
 const CAPTIONS = [
@@ -96,7 +116,6 @@ async function main() {
 
   for (let i = 0; i < 47; i++) {
     const first = randomItem(FIRST_NAMES);
-    const last = randomItem(LAST_NAMES);
     const username = `${first.toLowerCase()}${randomInt(1, 999)}`;
     const email = `${username}@test.com`;
 
@@ -144,7 +163,10 @@ async function main() {
           content: randomItem(COMMENT_TEXTS),
           postId: post.id,
           authorId: commenter.id,
-          createdAt: new Date(post.createdAt.getTime() + randomInt(60000, 5 * 24 * 60 * 60 * 1000)),
+          createdAt: new Date(
+            post.createdAt.getTime() +
+              randomInt(60000, 5 * 24 * 60 * 60 * 1000),
+          ),
         },
       });
     }
