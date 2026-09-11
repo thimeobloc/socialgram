@@ -1,23 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePostDetail } from "./usePostDetail";
 import { postComment } from "./postComment.api";
 import type { Comment } from "./postDetail.schema";
 import { useAuth } from "../../shared/auth/useAuth";
+import { API_URL } from "../s3-feed/config";
 import { CommentItem } from "./CommentItem";
 
 export function PostDetail() {
   const { id } = useParams<{ id: string }>();
+  const { token, user } = useAuth();
 
-  if (!id) {
-    return (
-      <p role="alert" className="mt-20 text-center text-slate">
-        Post introuvable
-      </p>
-    );
-  }
-
-  const state = usePostDetail(id);
+  const state = usePostDetail(id ?? "", token);
 
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -25,19 +19,26 @@ export function PostDetail() {
   const [localComments, setLocalComments] = useState<Comment[]>([]);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
-  const { token, user } = useAuth();
+  // Navigating between posts keeps this component mounted, so the per-post
+  // local state must be cleared when the id changes.
+  useEffect(() => {
+    setContent("");
+    setSubmitError(null);
+    setLocalComments([]);
+    setDeletedIds(new Set());
+  }, [id]);
 
   // Sends a new comment to the API
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     // Prevent empty submissions or multiple requests
-    if (content.trim().length === 0 || submitting || !token) return;
+    if (!id || content.trim().length === 0 || submitting || !token) return;
 
     setSubmitting(true);
     setSubmitError(null);
 
-    const result = await postComment(id!, content, token);
+    const result = await postComment(id, content, token);
 
     setSubmitting(false);
 
@@ -91,7 +92,11 @@ export function PostDetail() {
           <p className="text-ink/80 whitespace-pre-line">{post.content}</p>
 
           {post.imageUrl && (
-            <img src={post.imageUrl} alt="" className="w-full rounded-xl object-cover" />
+            <img
+              src={`${API_URL}${post.imageUrl}`}
+              alt=""
+              className="w-full rounded-xl object-cover"
+            />
           )}
 
           <p className="text-sm text-slate">

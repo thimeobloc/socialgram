@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { authenticate } from "../auth";
 import { prisma, router } from "./config.route";
 
+const MAX_COMMENT_LENGTH = 1000;
+
 // ==================== COMMENTS ====================
 
 router.post(
@@ -13,7 +15,15 @@ router.post(
     const userId = req.userId;
 
     if (typeof content !== "string" || content.trim().length === 0) {
-      return res.status(400).json({ error: "Content is required" });
+      return res
+        .status(400)
+        .json({ error: "Le commentaire ne peut pas être vide" });
+    }
+
+    if (content.length > MAX_COMMENT_LENGTH) {
+      return res
+        .status(400)
+        .json({ error: `Le commentaire dépasse ${MAX_COMMENT_LENGTH} caractères` });
     }
 
     try {

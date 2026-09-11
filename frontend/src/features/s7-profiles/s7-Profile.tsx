@@ -5,51 +5,51 @@ import EditProfileModal from "./EditProfileModal";
 import { useProfile } from "./useProfile";
 import Delete from "../s8-deletion/postDeletion";
 
-
 export default function Profile() {
-
-  type ScreenState =
-    | { status: "loading" }
-    | { status: "error" }
-    | {
-      status: "ready";
-      username: string;
-      posts: { id: string; content: string }[];
-    };
-
-  //Post deletion confirmation
-  const [confirmPostDeletion, setConfirmationDeletion] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
   const { id: routeId } = useParams<{ id: string }>();
   const { user, token, updateUser } = useAuth();
 
   const profileId = routeId ?? user?.id;
   const isOwner = routeId === undefined || routeId === user?.id;
 
-  const { screen, showUsername, removePost } = useProfile(profileId);
-  const [state, setState] = useState<ScreenState>({ status: "loading" });
+  const { screen, showUsername, removePost } = useProfile(profileId, token);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [confirmPostId, setConfirmPostId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (screen.status === "loading") {
     return <p className="mt-20 text-center text-slate">Chargement…</p>;
   }
 
-
   if (screen.status === "error") {
     return <p className="mt-20 text-center text-red-600">{screen.message}</p>;
-  }
-  if (state.status === "error") {
-    return (
-      <p className="mt-20 text-center text-red-600">Profil introuvable.</p>
-    );
   }
 
   const canEdit = isOwner && token !== null && profileId !== undefined;
 
-  return (
+  function openConfirm(postId: string) {
+    setConfirmPostId(postId);
+    setDeleteError(null);
+  }
 
+  function closeConfirm() {
+    setConfirmPostId(null);
+    setDeleteError(null);
+  }
+
+  async function confirmDelete(postId: string) {
+    if (!token) return;
+    const result = await Delete(postId, token);
+    if (!result.success) {
+      setDeleteError(result.error);
+      return;
+    }
+    removePost(postId);
+    closeConfirm();
+  }
+
+  return (
     <main className="mx-auto max-w-xl px-4 py-10">
       <header className="flex items-center justify-between rounded-2xl bg-brand px-5 py-4 text-white">
         <div>
@@ -79,79 +79,54 @@ export default function Profile() {
           {screen.posts.map((post) => (
             <li
               key={post.id}
-              className="relative rounded-2xl border border-cream bg-white p-4 pr-28 shadow-sm transition hover:shadow-md"
+              className={`relative rounded-2xl border border-cream bg-white p-4 shadow-sm transition hover:shadow-md ${
+                isOwner ? "pr-28" : ""
+              }`}
             >
-              <button
-                onClick={() => setConfirmationDeletion(post.id)}
-                className="absolute right-4 top-4 rounded-full bg-red-500 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-600 active:scale-95"
-              >
-                Supprimer
-              </button>
+              <p className="whitespace-pre-line text-ink/80">{post.content}</p>
 
-              <p className="whitespace-pre-line text-ink/80">
-                {post.content}
-              </p>
+              {isOwner && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => openConfirm(post.id)}
+                    className="absolute right-4 top-4 rounded-full bg-red-500 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-600 active:scale-95"
+                  >
+                    Supprimer
+                  </button>
 
-              {confirmPostDeletion === post.id && (
-                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
-                  <p className="mb-3 text-sm font-medium text-red-800">
-                    Voulez-vous vraiment supprimer ce post ?
-                  </p>
-
-                  <div className="flex gap-2">
-
-                    <button
-                      onClick={async () => {
-
-                        if (!token) {
-                          return;
-                        }
-
-                        const result = await Delete(post.id, token);
-
-                        if (!result.success) {
-                          setDeleteError(result.error);
-                          return;
-                        }
-
-                        setState((currentState) => {
-                          if (currentState.status !== "ready") {
-                            return currentState;
-                          }
-
-                          return {
-                            ...currentState,
-                            posts: currentState.posts.filter(
-                              (currentPost) => currentPost.id !== post.id
-                            ),
-
-                          };
-                        });
-
-                        removePost(post.id);
-
-                        setConfirmationDeletion(null);
-                      }}
-                      className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 active:scale-95"
-                    >
-                      Oui, supprimer
-                    </button>
-
-                    <button
-                      onClick={() => setConfirmationDeletion(null)}
-                      className="rounded-full border border-brand bg-white px-4 py-2 text-sm font-semibold text-brand transition hover:bg-cream active:scale-95"
-                    >
-                      Annuler
-                    </button>
-
-                    {deleteError && (
-                      <p className="mb-3 text-sm font-medium text-red-700">
-                        {deleteError}
+                  {confirmPostId === post.id && (
+                    <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                      <p className="mb-3 text-sm font-medium text-red-800">
+                        Voulez-vous vraiment supprimer ce post ?
                       </p>
-                    )}
 
-                  </div>
-                </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete(post.id)}
+                          className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 active:scale-95"
+                        >
+                          Oui, supprimer
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={closeConfirm}
+                          className="rounded-full border border-brand bg-white px-4 py-2 text-sm font-semibold text-brand transition hover:bg-cream active:scale-95"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+
+                      {deleteError && (
+                        <p role="alert" className="mt-2 text-sm font-medium text-red-700">
+                          {deleteError}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </li>
           ))}

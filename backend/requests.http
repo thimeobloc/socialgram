@@ -31,6 +31,10 @@ GET {{baseUrl}}/posts
 GET {{baseUrl}}/posts/cmttti6sj00ongzfvi405dtie
 Authorization: Bearer {{token}}
 
+### Get single post - inexistant (doit renvoyer 404)
+GET {{baseUrl}}/posts/does-not-exist
+Authorization: Bearer {{token}}
+
 ### Create post
 POST {{baseUrl}}/posts
 Authorization: Bearer {{token}}

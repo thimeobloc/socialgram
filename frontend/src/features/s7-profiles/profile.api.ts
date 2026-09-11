@@ -5,6 +5,7 @@ import {
   type ProfilePost,
   type ProfileUser,
 } from "./profile.schema";
+import { notifyUnauthorized } from "../../shared/auth/unauthorized";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -13,15 +14,37 @@ export type ProfileResult =
   | { status: "not-found" }
   | { status: "error" };
 
-export async function fetchProfile(userId: string): Promise<ProfileResult> {
+export async function fetchProfile(
+  userId: string,
+  token: string | null,
+): Promise<ProfileResult> {
+  const headers: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
   try {
-    const userResponse = await fetch(`${API_URL}/users/${userId}`);
+    const userResponse = await fetch(`${API_URL}/users/${userId}`, { headers });
+
+    if (userResponse.status === 401) {
+      notifyUnauthorized();
+      return { status: "error" };
+    }
     if (userResponse.status === 404) {
       return { status: "not-found" };
     }
+    if (!userResponse.ok) {
+      return { status: "error" };
+    }
 
-    const postsResponse = await fetch(`${API_URL}/users/${userId}/posts`);
-    if (!userResponse.ok || !postsResponse.ok) {
+    const postsResponse = await fetch(`${API_URL}/users/${userId}/posts`, {
+      headers,
+    });
+
+    if (postsResponse.status === 401) {
+      notifyUnauthorized();
+      return { status: "error" };
+    }
+    if (!postsResponse.ok) {
       return { status: "error" };
     }
 
@@ -61,6 +84,10 @@ export async function updateProfile(
       body: JSON.stringify({ username, email }),
     });
 
+    if (response.status === 401) {
+      notifyUnauthorized();
+      return { status: "error" };
+    }
     if (response.status === 409) {
       return { status: "taken" };
     }
