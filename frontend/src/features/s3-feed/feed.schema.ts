@@ -15,6 +15,7 @@ export const postSchema = z.object({
   author: authorSchema.nullable(), 
   likeCount: z.number(),
   commentCount: z.number(),
+  likedByMe: z.boolean(),
 });
 
 // --- Response ---

@@ -9,11 +9,14 @@ export async function fetchFeed(
 ): Promise<FeedResponse> {
   let res: Response;
 
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   // --- TRY TO CALL NETWORK ---
   try {
-    res = await fetch(`${API_URL}/posts?page=${page}&limit=${limit}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    res = await fetch(`${API_URL}/posts?page=${page}&limit=${limit}`, { headers });
   } catch {
     // fetch ne rejette QUE si le serveur est injoignable / pas de réseau
     throw new Error("Impossible de contacter le serveur");
